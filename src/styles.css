@@ -12,6 +12,7 @@
   --panel-bg: rgba(5, 7, 15, 0.96);
   --panel-w: 320px;
   --log-h: 124px;
+  --cond: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   color-scheme: dark;
 }
@@ -376,4 +377,296 @@ button { font: inherit; }
 @keyframes overview-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translateX(-50%); } }
 @media (max-width: 900px) {
   .overview-btn { top: calc(56px + env(safe-area-inset-top, 0px)); font-size: 11px; }
+}
+
+/* ── Terminal: atalho para responder a aprovação ── */
+.term-apv {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--amber);
+  text-shadow: 0 0 6px var(--amber);
+  font-size: inherit;
+  cursor: pointer;
+}
+.term-apv:hover, .term-apv:focus-visible { text-decoration: underline; outline: none; }
+
+/* ── Aprovações: indicador fixo no canto ───── */
+.apv-indicador {
+  position: fixed;
+  z-index: 55;
+  right: calc(14px + env(safe-area-inset-right, 0px));
+  bottom: calc(var(--log-h) + 14px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 10px;
+  font-family: var(--cond);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--amber);
+  background: rgba(5, 7, 15, 0.92);
+  border: 1px solid var(--amber);
+  cursor: pointer;
+  animation: apv-pulso 1.6s ease-in-out infinite;
+}
+.apv-indicador b {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  font-size: 20px;
+  letter-spacing: 0;
+  color: #05070f;
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+}
+.apv-indicador:hover, .apv-indicador:focus-visible { background: rgba(255, 176, 0, 0.14); outline: none; }
+@keyframes apv-pulso {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 176, 0, 0.45), inset 0 0 6px rgba(255, 176, 0, 0.12); }
+  50% { box-shadow: 0 0 22px rgba(255, 176, 0, 0.95), inset 0 0 12px rgba(255, 176, 0, 0.3); }
+}
+
+/* ── Aprovações: painel lateral (tela cheia no celular) ── */
+.apv-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(2, 3, 8, 0.55);
+  animation: apv-fade 0.18s ease-out;
+}
+@keyframes apv-fade { from { opacity: 0; } }
+.apv-painel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  background: rgba(3, 5, 10, 0.97);
+  border-left: 1px solid var(--amber);
+  box-shadow: -4px 0 32px rgba(255, 176, 0, 0.25);
+  padding-top: env(safe-area-inset-top, 0px);
+  animation: slide-in 0.22s ease-out;
+}
+.apv-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px 12px 18px;
+  border-bottom: 1px solid rgba(255, 176, 0, 0.45);
+}
+.apv-head h2 {
+  margin: 0;
+  font-family: var(--cond);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--amber);
+  text-shadow: 0 0 8px rgba(255, 176, 0, 0.7);
+}
+.apv-head h2 span { font-size: 14px; letter-spacing: 0.14em; color: var(--text); text-shadow: none; }
+.apv-head button {
+  padding: 8px;
+  font-size: 12px;
+  color: var(--magenta);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.apv-head button:hover { text-shadow: 0 0 6px var(--magenta); }
+.apv-foot {
+  padding: 10px 18px calc(10px + env(safe-area-inset-bottom, 0px));
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--gray-dim);
+  border-top: 1px solid rgba(255, 176, 0, 0.25);
+}
+
+/* PIN */
+.apv-pin {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 48px 24px;
+}
+.apv-pin label {
+  font-family: var(--cond);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: var(--text);
+}
+.apv-pin input {
+  width: 200px;
+  padding: 10px 0 10px 0.6em;
+  font-family: var(--mono);
+  font-size: 36px;
+  letter-spacing: 0.6em;
+  text-align: center;
+  color: var(--amber);
+  caret-color: var(--amber);
+  background: rgba(255, 176, 0, 0.05);
+  border: 1px solid var(--amber);
+  border-radius: 0;
+  outline: none;
+  box-shadow: 0 0 12px rgba(255, 176, 0, 0.25);
+  /* esconde os dígitos sem ser campo de senha (o navegador não oferece salvar o PIN) */
+  -webkit-text-security: disc;
+  text-security: disc;
+}
+.apv-pin input:focus { box-shadow: 0 0 18px rgba(255, 176, 0, 0.6), inset 0 0 10px rgba(255, 176, 0, 0.15); }
+.apv-pin input:disabled { opacity: 0.6; }
+.apv-pin input.apv-pin-bad {
+  border-color: var(--magenta);
+  box-shadow: 0 0 16px rgba(255, 45, 149, 0.6);
+  animation: apv-treme 0.35s;
+}
+@keyframes apv-treme {
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.apv-pin-msg { margin: 0; min-height: 1.4em; font-size: 11px; letter-spacing: 0.18em; color: var(--gray); }
+.apv-pin-msg-bad { color: var(--magenta); text-shadow: 0 0 6px var(--magenta); }
+.apv-entrar {
+  width: 200px;
+  padding: 12px;
+  font-family: var(--cond);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: #05070f;
+  background: var(--amber);
+  border: 0;
+  cursor: pointer;
+}
+.apv-entrar:disabled { opacity: 0.35; cursor: default; }
+
+/* Lista */
+.apv-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber) transparent;
+}
+.apv-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.apv-card {
+  padding: 12px 14px 14px;
+  border: 1px solid rgba(255, 176, 0, 0.55);
+  border-left: 3px solid var(--amber);
+  background: rgba(255, 176, 0, 0.04);
+  box-shadow: 0 0 12px rgba(255, 176, 0, 0.12);
+  overflow: hidden;
+  max-height: 600px;
+}
+.apv-card-out { animation: apv-sai 0.32s ease-in forwards; pointer-events: none; }
+@keyframes apv-sai {
+  0% { opacity: 1; transform: none; }
+  45% { opacity: 0; transform: translateX(40px); max-height: 600px; }
+  100% { opacity: 0; transform: translateX(40px); max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: -12px; border-width: 0; }
+}
+.apv-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.apv-ref { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: var(--amber); }
+.apv-quando { font-size: 10.5px; color: var(--gray); text-align: right; }
+.apv-origem { margin-top: 4px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray); }
+.apv-titulo {
+  margin: 8px 0 0;
+  font-family: var(--cond);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+.apv-detalhe { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: #aab2c2; overflow-wrap: anywhere; }
+.apv-aviso {
+  margin: 10px 0 0;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--magenta);
+  border: 1px solid rgba(255, 45, 149, 0.5);
+  background: rgba(255, 45, 149, 0.08);
+}
+.apv-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.apv-btn {
+  --c: var(--lime);
+  min-height: 46px;
+  font-family: var(--cond);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 8%, transparent);
+  border: 1px solid var(--c);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c) 35%, transparent);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.apv-nao { --c: var(--magenta); }
+.apv-btn:hover:not(:disabled), .apv-btn:focus-visible {
+  background: color-mix(in srgb, var(--c) 20%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--c) 70%, transparent);
+  outline: none;
+}
+.apv-btn:disabled { cursor: default; opacity: 0.35; }
+.apv-btn.apv-btn-load {
+  opacity: 1;
+  color: #05070f;
+  background: var(--c);
+  animation: apv-carrega 0.9s ease-in-out infinite;
+}
+@keyframes apv-carrega { 50% { opacity: 0.55; } }
+
+.apv-erro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: var(--c);
+  border: 1px solid var(--c);
+  background: rgba(255, 45, 149, 0.08);
+}
+.apv-erro button {
+  padding: 6px 10px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--c);
+  background: none;
+  border: 1px solid var(--c);
+  cursor: pointer;
+}
+.apv-vazio {
+  margin: 48px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--cond);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--gray);
+  text-align: center;
+}
+.apv-vazio span { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--lime); }
+
+@media (max-width: 900px) {
+  .apv-indicador { font-size: 15px; padding: 8px 14px 8px 8px; }
+  .apv-painel { border-left: 0; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apv-indicador { animation-duration: 3s; }
+  .apv-card-out { animation-duration: 0.01s; }
 }

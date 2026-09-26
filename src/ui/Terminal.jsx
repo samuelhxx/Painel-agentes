@@ -11,7 +11,7 @@ function Linha({ k, v, cor }) {
 }
 
 // Painel de detalhe estilo terminal do agente clicado (atualiza ao vivo).
-export default function Terminal({ agente: a, onClose }) {
+export default function Terminal({ agente: a, onClose, onAprovacoes }) {
   const now = useNow(1000)
   const cfg = STATUS[a.status] ?? STATUS.ocioso
   const travado = isStuck(a, now)
@@ -51,6 +51,14 @@ export default function Terminal({ agente: a, onClose }) {
         <Linha k="ÚLT. EXEC." v={ultima} />
         <Linha k="PRÓX. EXEC." v={proxima} cor={atrasada ? MAGENTA : undefined} />
         <br />
+        {a.status === 'aguardando_aprovacao' && (
+          <>
+            <button className="term-apv" onClick={onAprovacoes}>
+              &gt; responder aprovação_
+            </button>
+            <br />
+          </>
+        )}
         <div>
           &gt; <span className="cursor">█</span>
         </div>

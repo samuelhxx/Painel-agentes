@@ -55,3 +55,14 @@ export function diaHora(t, now) {
     dia === 0 ? 'hoje' : dia === 1 ? 'amanhã' : dia === -1 ? 'ontem' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
   return `${prefixo} ${hhmm(t)}`
 }
+
+// "há 5 minutos", "há 2 horas", "há 3 dias" (texto corrido, para frases)
+export function haExtenso(t, now) {
+  const min = Math.floor(Math.max(0, now - t) / 60000)
+  const n = (v, um, varios) => `há ${v} ${v === 1 ? um : varios}`
+  if (min < 1) return 'agora há pouco'
+  if (min < 60) return n(min, 'minuto', 'minutos')
+  const h = Math.floor(min / 60)
+  if (h < 24) return n(h, 'hora', 'horas')
+  return n(Math.floor(h / 24), 'dia', 'dias')
+}

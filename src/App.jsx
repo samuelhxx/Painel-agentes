@@ -7,6 +7,7 @@ import Scene from './scene/Scene.jsx'
 import SidePanel from './ui/SidePanel.jsx'
 import EventLog from './ui/EventLog.jsx'
 import Terminal from './ui/Terminal.jsx'
+import Aprovacoes from './ui/Aprovacoes.jsx'
 
 export default function App() {
   const [agentes, setAgentes] = useState([])
@@ -15,6 +16,7 @@ export default function App() {
   const [sync, setSync] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
   const [gaveta, setGaveta] = useState(false)
+  const [aprovacoesAbertas, setAprovacoesAbertas] = useState(false)
   const aproximado = useAproximado()
 
   // O cache do Google às vezes serve versões diferentes (e mais antigas) do CSV.
@@ -24,6 +26,10 @@ export default function App() {
   const estadoAgentes = useRef(new Map()) // id -> agente (com "desde")
   const historico = useRef(new Map()) // chave horario|agente|evento -> evento
   const primeiraLeitura = useRef(true)
+  // Agentes cuja aprovação foi decidida neste painel: id -> momento da decisão.
+  // O CSV publicado tem cache de alguns minutos e continua dizendo "aguardando_aprovacao";
+  // enquanto ele não trouxer uma linha mais nova que a decisão, vale o que decidimos aqui.
+  const resolvidos = useRef(new Map())
 
   useEffect(() => {
     let ativo = true
@@ -34,7 +40,12 @@ export default function App() {
         const now = Date.now()
 
         const estado = estadoAgentes.current
-        for (const a of dados) {
+        for (let a of dados) {
+          const decidido = resolvidos.current.get(a.id)
+          if (decidido != null) {
+            if (a.status === 'aguardando_aprovacao' && !(a.atualizado > decidido)) a = { ...a, status: 'ocioso' }
+            else resolvidos.current.delete(a.id) // o CSV alcançou a decisão (ou há um pedido novo)
+          }
           const prev = estado.get(a.id)
           if (prev && prev.atualizado && a.atualizado && a.atualizado < prev.atualizado) continue // versão velha
           let desde
@@ -70,6 +81,20 @@ export default function App() {
     const timer = setInterval(carregar, REFRESH_MS)
     return () => { ativo = false; clearInterval(timer) }
   }, [])
+
+  // Chamado pelo painel de aprovações assim que o servidor confirma a decisão.
+  const marcarResolvidos = useCallback((ids) => {
+    const t = Date.now()
+    const estado = estadoAgentes.current
+    for (const id of ids) {
+      resolvidos.current.set(id, t)
+      const a = estado.get(id)
+      if (a?.status === 'aguardando_aprovacao') estado.set(id, { ...a, status: 'ocioso', desde: t })
+    }
+    setAgentes([...estado.values()])
+  }, [])
+  const abrirAprovacoes = useCallback(() => { setAprovacoesAbertas(true); setGaveta(false) }, [])
+  const fecharAprovacoes = useCallback(() => setAprovacoesAbertas(false), [])
 
   const layout = useMemo(() => computeLayout(agentes), [agentes])
   const layoutRef = useRef(layout)
@@ -127,7 +152,14 @@ export default function App() {
         onSelect={selecionarDaLista}
       />
       <EventLog eventos={eventos} />
-      {selecionado && <Terminal agente={selecionado} onClose={sair} />}
+      {selecionado && <Terminal agente={selecionado} onClose={sair} onAprovacoes={abrirAprovacoes} />}
+      <Aprovacoes
+        agentes={agentes}
+        aberto={aprovacoesAbertas}
+        onAbrir={abrirAprovacoes}
+        onFechar={fecharAprovacoes}
+        onResolvidos={marcarResolvidos}
+      />
     </>
   )
 }
