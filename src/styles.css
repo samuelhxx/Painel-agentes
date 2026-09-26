@@ -1,0 +1,379 @@
+:root {
+  --bg: #05070f;
+  --brand: #a855f7; /* roxo neon (mesmo tom do #73018C, mais claro para brilhar) */
+  --brand-dark: #73018c; /* roxo oficial AS Construction */
+  --amber: #ffb000;
+  --magenta: #ff2d95;
+  --lime: #39ff14;
+  --yellow: #ffd400;
+  --text: #d6dbe6;
+  --gray: #7d8596;
+  --gray-dim: #4b5263;
+  --panel-bg: rgba(5, 7, 15, 0.96);
+  --panel-w: 320px;
+  --log-h: 124px;
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  overflow: hidden;
+}
+button { font: inherit; }
+
+/* ── Área da cena 3D ───────────────────────── */
+.scene {
+  position: fixed;
+  top: 0;
+  left: var(--panel-w);
+  right: 0;
+  bottom: var(--log-h);
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* ── Painel lateral fixo ───────────────────── */
+.side {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--panel-w);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--brand);
+  box-shadow: 2px 0 24px rgba(168, 85, 247, 0.22);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.side-head { padding: 18px 18px 14px; border-bottom: 1px solid rgba(168, 85, 247, 0.45); }
+.side-head h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: var(--brand);
+  text-shadow: 0 0 8px var(--brand), 0 0 22px rgba(168, 85, 247, 0.6);
+}
+.side-sub { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.34em; color: var(--text); }
+.side-meta { margin: 10px 0 0; font-size: 10px; letter-spacing: 0.08em; color: var(--gray); }
+.side-error { margin: 6px 0 0; font-size: 10px; color: var(--magenta); }
+
+.counters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.45);
+}
+.counter { display: flex; flex-direction: column; min-width: 0; }
+.counter b {
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--c);
+  text-shadow: 0 0 6px var(--c), 0 0 16px var(--c);
+}
+.counter span { margin-top: 4px; font-size: 8.5px; letter-spacing: 0.1em; color: var(--gray); line-height: 1.3; }
+
+.side-scroll { flex: 1; overflow-y: auto; padding: 4px 0 8px; scrollbar-width: thin; scrollbar-color: var(--brand-dark) transparent; }
+.block { margin: 12px 14px 4px; }
+.block h2 {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--brand);
+}
+.block h2::before { content: '▍'; margin-right: 4px; }
+.block ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.block li {
+  padding: 6px 8px;
+  border-left: 2px solid var(--c);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 11px;
+  min-width: 0;
+}
+.block-attention {
+  border: 1px solid var(--amber);
+  box-shadow: 0 0 12px rgba(255, 176, 0, 0.25), inset 0 0 12px rgba(255, 176, 0, 0.06);
+  padding: 10px 10px 10px;
+}
+.block-attention h2 { color: var(--amber); }
+.empty { margin: 0; font-size: 11px; color: var(--gray-dim); }
+
+.row-top, .row-inline { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.row-name {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row-name:hover, .row-name:focus-visible { color: var(--c); text-shadow: 0 0 6px var(--c); outline: none; }
+.row-meta { margin-top: 2px; font-size: 9.5px; letter-spacing: 0.1em; color: var(--gray); }
+.row-task { margin-top: 2px; color: #aab2c2; overflow-wrap: anywhere; }
+.row-reason { color: var(--c); }
+.row-time { flex: none; font-size: 10px; color: var(--gray); }
+.row-warn { color: var(--amber); }
+.row-late { color: var(--magenta); text-shadow: 0 0 6px var(--magenta); }
+
+.side-foot {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 18px calc(10px + env(safe-area-inset-bottom, 0px));
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--gray);
+  border-top: 1px solid rgba(168, 85, 247, 0.45);
+}
+
+.drawer-toggle { display: none; }
+
+/* ── Log de eventos (rodapé) ───────────────── */
+.log {
+  position: fixed;
+  z-index: 10;
+  left: var(--panel-w);
+  right: 0;
+  bottom: 0;
+  height: var(--log-h);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border-top: 1px solid var(--brand);
+  box-shadow: 0 -2px 20px rgba(168, 85, 247, 0.18);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.log-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--brand);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.25);
+}
+.log-hint { color: var(--yellow); opacity: 0.85; text-align: right; }
+.log-list {
+  flex: 1;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-dark) transparent;
+}
+.log-list li {
+  padding: 2px 14px;
+  font-size: 11.5px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #aab2c2;
+}
+.log-list time { color: var(--c); text-shadow: 0 0 6px var(--c); font-weight: 600; }
+.log-sep { color: var(--gray-dim); }
+.log-list .log-empty { color: var(--gray-dim); }
+.log-setor { color: var(--gray); letter-spacing: 0.08em; }
+.log-agente { color: var(--text); }
+.log-list b { color: var(--text); font-weight: 600; }
+.log-new { animation: log-flash 1.6s ease-out; }
+@keyframes log-flash {
+  0% { background: color-mix(in srgb, var(--c) 35%, transparent); box-shadow: inset 3px 0 0 var(--c); }
+  100% { background: transparent; box-shadow: inset 3px 0 0 transparent; }
+}
+
+/* ── Plaquinhas dos agentes na cena ────────── */
+.pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(var(--tag-scale, 1));
+  user-select: none;
+}
+.pin-force { transform: scale(max(var(--tag-scale, 1), 1)); }
+.pin-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 6px var(--c), 0 0 14px var(--c);
+}
+.tag {
+  display: none;
+  white-space: nowrap;
+  padding: 2px 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c);
+  background: rgba(5, 7, 15, 0.8);
+  border: 1px solid var(--c);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--c) 50%, transparent);
+}
+.tag em { font-style: normal; opacity: 0.7; }
+.pin-stuck .tag { border-color: var(--amber); box-shadow: 0 0 8px rgba(255, 176, 0, 0.7); }
+.pin-force .tag { background: rgba(5, 7, 15, 0.95); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 70%, transparent); }
+
+/* Quando mostrar a plaquinha completa (senão fica só o ponto):
+   perto = todas; médio = só as que pedem atenção; longe = só a do mouse/seleção. */
+.scene[data-zoom='near'] .pin .tag,
+.scene[data-zoom='mid'] .pin-attention .tag,
+.pin-force .tag { display: block; }
+.scene[data-zoom='near'] .pin .pin-dot,
+.scene[data-zoom='mid'] .pin-attention .pin-dot,
+.pin-force .pin-dot { display: none; }
+.scene[data-zoom='far'] .pin-dot { width: 5px; height: 5px; }
+
+.sector-sign {
+  white-space: nowrap;
+  padding: 2px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #05070f;
+  background: var(--c);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c) 60%, transparent);
+  transform: scale(var(--tag-scale, 1));
+  user-select: none;
+}
+.sector-sign span { opacity: 0.6; margin-right: 6px; }
+
+/* ── Painel de detalhe estilo terminal ─────── */
+.terminal {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 100%);
+  display: flex;
+  flex-direction: column;
+  background: rgba(3, 5, 10, 0.96);
+  border-left: 1px solid var(--brand);
+  box-shadow: -4px 0 28px rgba(168, 85, 247, 0.3);
+  color: var(--lime);
+  font-size: 12.5px;
+  padding-top: env(safe-area-inset-top, 0px);
+  animation: slide-in 0.22s ease-out;
+}
+@keyframes slide-in { from { transform: translateX(100%); } to { transform: none; } }
+.term-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--brand);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.45);
+}
+.term-bar button { color: var(--magenta); background: none; border: 0; cursor: pointer; padding: 4px; }
+.term-bar button:hover { text-shadow: 0 0 6px var(--magenta); }
+.term-body { flex: 1; overflow: auto; padding: 16px 14px; line-height: 1.7; }
+.term-line { display: flex; gap: 6px; }
+.term-line > span:last-child { overflow-wrap: anywhere; }
+.term-key { color: #4d7a5a; flex: none; }
+.term-dim { color: #4d7a5a; }
+.cursor { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.term-foot {
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--gray-dim);
+  border-top: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+/* ── Tela estreita: painel vira gaveta ─────── */
+@media (max-width: 900px) {
+  :root { --panel-w: 0px; --log-h: 112px; }
+  .side {
+    width: min(320px, 88vw);
+    z-index: 45;
+    padding-top: calc(44px + env(safe-area-inset-top, 0px));
+    transform: translateX(-102%);
+    transition: transform 0.25s ease-out;
+  }
+  .side-open { transform: none; }
+  .drawer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: fixed;
+    z-index: 50;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    left: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    color: var(--brand);
+    background: var(--panel-bg);
+    border: 1px solid var(--brand);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+    cursor: pointer;
+  }
+  .log-hint { display: none; }
+  .log-list li { font-size: 10.5px; }
+}
+
+/* Plaquinha do diretor: sempre visível, não depende de zoom nem de mouse. */
+.boss-tag {
+  white-space: nowrap;
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  background: rgba(5, 7, 15, 0.85);
+  border: 1px solid var(--brand);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+  user-select: none;
+}
+
+/* Placas de setor clicáveis: levam a câmera até o setor. */
+.sector-sign-link { cursor: pointer; pointer-events: auto; }
+.sector-sign-link:hover { filter: brightness(1.2); box-shadow: 0 0 18px var(--c); }
+
+/* Botão para voltar à visão geral (aparece quando a câmera está aproximada). */
+.overview-btn {
+  position: fixed;
+  z-index: 25;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  left: calc(var(--panel-w) + (100vw - var(--panel-w)) / 2);
+  transform: translateX(-50%);
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: #ffffff;
+  background: rgba(115, 1, 140, 0.85);
+  border: 1px solid var(--brand);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.7), inset 0 0 10px rgba(168, 85, 247, 0.35);
+  cursor: pointer;
+  animation: overview-in 0.2s ease-out;
+}
+.overview-btn:hover { background: rgba(168, 85, 247, 0.9); }
+@keyframes overview-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translateX(-50%); } }
+@media (max-width: 900px) {
+  .overview-btn { top: calc(56px + env(safe-area-inset-top, 0px)); font-size: 11px; }
+}
