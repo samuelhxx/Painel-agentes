@@ -7,12 +7,11 @@
 // Aba eventos: horario, setor, agente, status, evento. A porta manda os 100 últimos.
 
 // Reserva: se a porta não responder (partida a frio do Apps Script, rede móvel lenta),
-// o painel lê a mesma planilha publicada na web em CSV. Chega ~1 min atrasado, mas
-// o galpão nunca fica vazio.
+// o painel lê a aba agentes publicada na web em CSV. Chega ~1 min atrasado, mas o galpão
+// nunca fica vazio. Na planilha, publique SÓ a aba agentes (nunca o documento inteiro:
+// as outras abas têm cliente, e-mail e segredo do LinkedIn).
 export const SHEET_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRrU6J_V5xMwId-92zEArY353rIZplcFziHOZyKNzxHuYCbV-7rqfX3G2iuZ82yBbFsKsSEn-bj6USL/pub?output=csv'
-export const EVENTS_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRrU6J_V5xMwId-92zEArY353rIZplcFziHOZyKNzxHuYCbV-7rqfX3G2iuZ82yBbFsKsSEn-bj6USL/pub?gid=1279412886&single=true&output=csv'
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRrU6J_V5xMwId-92zEArY353rIZplcFziHOZyKNzxHuYCbV-7rqfX3G2iuZ82yBbFsKsSEn-bj6USL/pub?gid=537934912&single=true&output=csv'
 
 // Quantos eventos mais recentes mostrar no log.
 export const MAX_EVENTOS = 100

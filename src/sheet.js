@@ -1,4 +1,4 @@
-import { REFRESH_MS, INATIVO_MS, SHEET_CSV_URL, EVENTS_CSV_URL } from './config.js'
+import { REFRESH_MS, INATIVO_MS, SHEET_CSV_URL } from './config.js'
 import { API_URL, CHAVE_PAINEL, jsonp } from './aprovacoes.js'
 import { normalizeStatus } from './status.js'
 import { parseDate } from './time.js'
@@ -74,10 +74,12 @@ async function fetchCsv(url) {
   return parseCsv(await res.text())
 }
 
-// Reserva: a planilha publicada na web. ~1 min atrasada, mas não depende do Apps Script.
+// Reserva: só a aba agentes publicada na web (~1 min atrasada, não depende do Apps Script).
+// Os eventos NÃO vêm da reserva: eles citam cliente, e o nome só pode sair pela porta,
+// que corta. O log fica com o que já tinha chegado pela porta.
 async function lerCsv() {
-  const [ags, evs] = await Promise.all([fetchCsv(SHEET_CSV_URL), fetchCsv(EVENTS_CSV_URL)])
-  return { agentes: ags.filter((a) => a.id).map(normalizar), eventos: normalizarEventos(evs).slice(-100) }
+  const ags = await fetchCsv(SHEET_CSV_URL)
+  return { agentes: ags.filter((a) => a.id).map(normalizar), eventos: [] }
 }
 
 // Tenta a porta; se ela não responder, lê a reserva na mesma rodada.
