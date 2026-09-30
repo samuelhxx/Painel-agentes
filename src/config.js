@@ -1,21 +1,17 @@
-// Cole aqui a URL da planilha do Google Sheets publicada na web em formato CSV
-// (Arquivo > Compartilhar > Publicar na web > escolha a aba > "Valores separados por vírgula (.csv)").
+// O painel lê agentes e eventos direto da porta (Apps Script), por JSONP, na ação
+// ler_painel. Antes lia o CSV "Publicar na web", que chega ~1 min atrasado: um agente
+// que roda 30-60 s nunca aparecia em EM EXECUÇÃO. URL e chave ficam em aprovacoes.js.
 //
-// Colunas da planilha (primeira linha), nesta grafia:
-//   id, nome, setor, status, tarefa, atualizado_em, proxima_execucao
+// Colunas da aba agentes: id, nome, setor, status, tarefa, atualizado_em, proxima_execucao
 // - status: ocioso | trabalhando | aguardando_aprovacao | erro
-// - atualizado_em: data e hora da última mudança do agente (ex.: 26/09/2026 14:30:00)
-// - proxima_execucao: data e hora da próxima rotina, ou vazio se o agente não tem rotina
-// Detalhes no README.md.
-export const SHEET_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRrU6J_V5xMwId-92zEArY353rIZplcFziHOZyKNzxHuYCbV-7rqfX3G2iuZ82yBbFsKsSEn-bj6USL/pub?output=csv'
-
-// Aba "eventos" da mesma planilha (gid=1279412886), colunas: horario, setor, agente, status, evento.
-export const EVENTS_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRrU6J_V5xMwId-92zEArY353rIZplcFziHOZyKNzxHuYCbV-7rqfX3G2iuZ82yBbFsKsSEn-bj6USL/pub?gid=1279412886&single=true&output=csv'
+// Aba eventos: horario, setor, agente, status, evento. A porta manda os 100 últimos.
 
 // Quantos eventos mais recentes mostrar no log.
 export const MAX_EVENTOS = 100
 
-// Intervalo de atualização, em milissegundos.
-export const REFRESH_MS = 5000
+// Intervalo entre leituras, em milissegundos. Cada leitura é uma execução do Apps Script,
+// da mesma cota que o follow-up e o vigia usam: não baixar sem fazer a conta.
+export const REFRESH_MS = 10000
+
+// Sem mouse nem teclado por este tempo, o painel para de ler e mostra "retomar".
+export const INATIVO_MS = 30 * 60 * 1000

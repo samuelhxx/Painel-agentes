@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { fetchAgents, fetchEvents } from './sheet.js'
-import { REFRESH_MS, MAX_EVENTOS } from './config.js'
+import { fetchPainel, iniciarLeitura } from './sheet.js'
+import { MAX_EVENTOS } from './config.js'
 import { computeLayout } from './layout.js'
 import { focarEm, voltarVisaoGeral, useAproximado, estaAproximado } from './scene/focus.js'
 import Scene from './scene/Scene.jsx'
@@ -14,6 +14,8 @@ export default function App() {
   const [eventos, setEventos] = useState([])
   const [erro, setErro] = useState(null)
   const [sync, setSync] = useState(null)
+  const [pausado, setPausado] = useState(false)
+  const leitura = useRef(null)
   const [selectedId, setSelectedId] = useState(null)
   const [gaveta, setGaveta] = useState(false)
   const [aprovacoesAbertas, setAprovacoesAbertas] = useState(false)
@@ -35,7 +37,7 @@ export default function App() {
     let ativo = true
     async function carregar() {
       try {
-        const [dados, evs] = await Promise.all([fetchAgents(), fetchEvents()])
+        const { agentes: dados, eventos: evs } = await fetchPainel()
         if (!ativo) return
         const now = Date.now()
 
@@ -74,13 +76,14 @@ export default function App() {
         setErro(null)
         setSync(now)
       } catch (e) {
+        // A tela fica com o último estado recebido; só aparece o aviso.
         if (ativo) setErro(e.message)
       }
     }
-    carregar()
-    const timer = setInterval(carregar, REFRESH_MS)
-    return () => { ativo = false; clearInterval(timer) }
+    leitura.current = iniciarLeitura(carregar, { aoPausar: (p) => ativo && setPausado(p) })
+    return () => { ativo = false; leitura.current?.encerrar() }
   }, [])
+  const retomar = useCallback(() => leitura.current?.retomar(), [])
 
   // Chamado pelo painel de aprovações assim que o servidor confirma a decisão.
   const marcarResolvidos = useCallback((ids) => {
@@ -145,13 +148,18 @@ export default function App() {
       <SidePanel
         agentes={agentes}
         setores={layout.sectors.length}
-        fonte="PLANILHA"
+        fonte="PORTA"
         sync={sync}
         erro={erro}
         aberto={gaveta}
         onSelect={selecionarDaLista}
       />
       <EventLog eventos={eventos} />
+      {pausado && (
+        <button className="retomar-btn" onClick={retomar} title="Parado depois de 30 min sem uso, para poupar a cota do Apps Script">
+          ▶ RETOMAR
+        </button>
+      )}
       {selecionado && <Terminal agente={selecionado} onClose={sair} onAprovacoes={abrirAprovacoes} />}
       <Aprovacoes
         agentes={agentes}

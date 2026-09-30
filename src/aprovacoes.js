@@ -6,9 +6,9 @@
 //
 // A chave pode ficar no código; sozinha ela não faz nada.
 // O PIN NUNCA fica no código nem em storage: vem de quem chama, em memória.
-const API_URL =
+export const API_URL =
   'https://script.google.com/macros/s/AKfycbwkaf6V_oGTzV4ewWTI1GD_6wXsAc-sC6RrEdYc1kSrL0QPw_9D4KWt1exfXYM14sxUig/exec'
-const CHAVE_PAINEL = 'as-p-8e9c01fwhzoyd4z79hnbqb2i'
+export const CHAVE_PAINEL = 'as-p-8e9c01fwhzoyd4z79hnbqb2i'
 const TIMEOUT_MS = 15000
 
 // tipo: 'pin' (PIN errado), 'negado' (chave errada), 'rede' (sem resposta / timeout),

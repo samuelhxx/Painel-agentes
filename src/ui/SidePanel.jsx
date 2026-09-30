@@ -45,7 +45,7 @@ export default function SidePanel({ agentes, setores, fonte, sync, erro, aberto,
         <p className="side-meta">
           FONTE: {fonte} · SYNC {REFRESH_MS / 1000}S · {sync ? hhmmss(sync) : '--:--:--'}
         </p>
-        {erro && <p className="side-error">⚠ FALHA AO LER PLANILHA: {erro}</p>}
+        {erro && <p className="side-error">⚠ PORTA SEM RESPOSTA · MOSTRANDO O ÚLTIMO ESTADO{sync ? ` (${hhmmss(sync)})` : ''}</p>}
       </header>
 
       <div className="counters">
