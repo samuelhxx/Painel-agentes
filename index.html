@@ -4,12 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Painel de Agentes</title>
-    <meta name="theme-color" content="#05070F" />
+    <meta name="theme-color" content="#0E033C" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* Tela de carregando: fica aqui no HTML para aparecer no primeiro instante, antes do
+         código do painel (1,3 MB) terminar de baixar. O App avança a barra e tira a tela
+         quando a primeira etapa da cena (chão, células, bonecos, andon) estiver desenhada. */
+      #carregando {
+        position: fixed; inset: 0; z-index: 100;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+        background: #0E033C; color: #FFFFFF;
+        font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+        transition: opacity 0.35s ease-out;
+      }
+      #carregando.saindo { opacity: 0; pointer-events: none; }
+      #carregando .nome { font-size: clamp(34px, 7vw, 64px); font-weight: 700; letter-spacing: 0.08em; line-height: 1; }
+      #carregando .sub { font-size: 14px; font-weight: 600; letter-spacing: 0.34em; color: #9AA0B4; }
+      #carregando .trilho { width: min(360px, 70vw); height: 6px; background: #1D0042; overflow: hidden; }
+      #carregando .barra { height: 100%; width: 8%; background: #8C2CE1; transition: width 0.6s ease-out; }
+      #carregando .etapa { font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px; letter-spacing: 0.12em; color: #9AA0B4; min-height: 1em; }
+    </style>
   </head>
   <body>
+    <div id="carregando" role="status" aria-live="polite">
+      <div class="nome">AS CONSTRUCTION</div>
+      <div class="sub">PAINEL DE AGENTES</div>
+      <div class="trilho"><div class="barra" id="carregando-barra"></div></div>
+      <div class="etapa" id="carregando-etapa">carregando o painel</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -10,6 +10,22 @@ import EventLog from './ui/EventLog.jsx'
 import Terminal from './ui/Terminal.jsx'
 import Aprovacoes from './ui/Aprovacoes.jsx'
 
+// Tela de carregando (fica no index.html): avança a barra e some quando a cena está pronta.
+function carregando(pct, etapa) {
+  const barra = document.getElementById('carregando-barra')
+  const texto = document.getElementById('carregando-etapa')
+  if (barra) barra.style.width = `${pct}%`
+  if (texto && etapa) texto.textContent = etapa
+}
+function fimDoCarregando() {
+  const tela = document.getElementById('carregando')
+  if (!tela) return
+  carregando(100, 'pronto')
+  tela.classList.add('saindo')
+  setTimeout(() => tela.remove(), 400)
+}
+carregando(35, 'lendo a planilha')
+
 export default function App() {
   const [agentes, setAgentes] = useState([])
   const [eventos, setEventos] = useState([])
@@ -76,6 +92,10 @@ export default function App() {
               .slice(0, MAX_EVENTOS),
           )
         }
+        // marca de tempo: quando chegaram os primeiros dados (medição de abertura)
+        const marcas = (window.__marcas ||= {})
+        if (marcas.dados == null) carregando(70, 'montando o galpão')
+        marcas.dados ??= performance.now()
         primeiraLeitura.current = false
         setFonte(veio)
         setErro(null)
@@ -83,6 +103,7 @@ export default function App() {
       } catch (e) {
         // A tela fica com o último estado recebido; só aparece o aviso.
         if (ativo) setErro(e.message)
+        if (window.__marcas?.dados == null) carregando(35, 'sem conexão com a planilha · tentando de novo')
       }
     }
     leitura.current = iniciarLeitura(carregar, { aoPausar: (p) => ativo && setPausado(p) })
@@ -141,7 +162,7 @@ export default function App() {
 
   return (
     <>
-      <Scene layout={layout} agentes={agentes} eventos={eventos} selectedId={selectedId} onSelect={selecionar} onVazio={onVazio} />
+      <Scene layout={layout} agentes={agentes} eventos={eventos} selectedId={selectedId} onSelect={selecionar} onVazio={onVazio} onPronto={fimDoCarregando} />
       {aproximado && (
         <button className="overview-btn" onClick={sair}>
           ◱ VISÃO GERAL

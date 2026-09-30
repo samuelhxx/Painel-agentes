@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -14,6 +14,22 @@ import Billboard from './Billboard.jsx'
 import Direction from './Direction.jsx'
 import { STATUS, piorStatus } from '../status.js'
 import { hhmm } from '../time.js'
+
+// Marca de tempo em window.__marcas quando o primeiro quadro com este conteúdo
+// termina de ser desenhado (o rAF seguinte ao useFrame vem depois do desenho).
+function Marca({ nome, aoMarcar }) {
+  const feito = useRef(false)
+  useFrame(() => {
+    if (feito.current) return
+    feito.current = true
+    requestAnimationFrame(() => {
+      const m = (window.__marcas ||= {})
+      m[nome] ??= performance.now()
+      aoMarcar?.()
+    })
+  })
+  return null
+}
 
 // Galpão de dia: cinza claro no fundo, sem o preto do visual antigo.
 const BG = '#D6DADF'
@@ -109,8 +125,11 @@ function ZoomWatcher() {
   return null
 }
 
-function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
+function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio, onPronto }) {
   const { sectors, posicoes, width, depth, rowZ } = layout
+  // Montagem em duas etapas: primeiro o que serve para trabalhar (chão, faixas, células,
+  // placas, bonecos, andon); o enfeite só entra no quadro seguinte ao primeiro desenho.
+  const [etapa2, setEtapa2] = useState(false)
 
   // Mezanino da Direção atrás da fileira do fundo; telão na ponta esquerda, pendurado na treliça do fundo.
   const zMez = -depth / 2 - 4.6
@@ -169,10 +188,25 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
         <Floor onVazio={onVazio} />
         {sectors.length > 0 && (
           <>
+            {/* ── ETAPA 1: o que serve para trabalhar ── */}
+            <Mesclar deps={[xMin, xMax, zMeio, zPedestre, zCorredor]}>
+              <Aisles xMin={xMin} xMax={xMax} zPedestre={zPedestre} zCorredor={zCorredor} zMeio={zMeio} />
+            </Mesclar>
+            {sectors.map((s, i) => (
+              <Sector key={s.nome} nome={s.nome} numero={i + 1} x={s.x} z={s.z} w={s.w} d={s.d} status={piorStatus(s.lista)} />
+            ))}
+            {/* primeiro quadro da etapa 1 desenhado: sai a tela de carregando e entra o enfeite */}
+            <Marca nome="etapa1" aoMarcar={() => { setEtapa2(true); onPronto?.() }} />
+          </>
+        )}
+
+        {/* ── ETAPA 2: enfeite, só no quadro seguinte ── */}
+        {sectors.length > 0 && etapa2 && (
+          <>
+            <Marca nome="etapa2" />
             {/* tudo o que é parado no galpão vira poucas peças (ver Mesclar.jsx) */}
             <Mesclar deps={[xMin, xMax, zMin, zMax, zMeio, rowZ.join(',')]}>
               <Galpao xMin={xMin} xMax={xMax} zMin={zMin} zMax={zMax} />
-              <Aisles xMin={xMin} xMax={xMax} zPedestre={zPedestre} zCorredor={zCorredor} zMeio={zMeio} />
               <Props xMin={xMin} xMax={xMax} zMin={zMin} zCorredor={zCorredor} />
               {/* tesouras do telhado sobre cada fileira de células */}
               {rowZ.map((z, i) => (
@@ -185,11 +219,7 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
           </>
         )}
 
-        {sectors.map((s, i) => (
-          <Sector key={s.nome} nome={s.nome} numero={i + 1} x={s.x} z={s.z} w={s.w} d={s.d} status={piorStatus(s.lista)} />
-        ))}
-
-        {rowZ.length > 0 && (
+        {etapa2 && rowZ.length > 0 && (
           <Billboard
             x={xTelao}
             z={rowZ[0]}
@@ -200,7 +230,7 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
             ultimo={ultimo}
           />
         )}
-        {sectors.length > 0 && <Direction zc={zMez} agentes={agentes} />}
+        {etapa2 && sectors.length > 0 && <Direction zc={zMez} agentes={agentes} />}
 
         {posicoes.map(({ agente, x, z }) => (
           <Agent
