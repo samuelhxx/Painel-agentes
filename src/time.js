@@ -56,6 +56,23 @@ export function diaHora(t, now) {
   return `${prefixo} ${hhmm(t)}`
 }
 
+// Próxima execução sempre em hora do relógio, com a palavra do dia:
+// "hoje 14:00", "amanhã 08:00", "sex 08:00" (até 6 dias à frente), "12/10 08:00".
+// Nunca "em 7 h": quem olha o painel pensa no relógio da parede.
+const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+export function quando(t, now) {
+  const d = new Date(t)
+  const hoje = new Date(now)
+  hoje.setHours(0, 0, 0, 0)
+  const dia = Math.round((new Date(d).setHours(0, 0, 0, 0) - hoje) / 86400000)
+  const prefixo =
+    dia === 0 ? 'hoje'
+      : dia === 1 ? 'amanhã'
+        : dia > 1 && dia < 7 ? DIAS[d.getDay()]
+          : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  return `${prefixo} ${hhmm(t)}`
+}
+
 // "há 5 minutos", "há 2 horas", "há 3 dias" (texto corrido, para frases)
 export function haExtenso(t, now) {
   const min = Math.floor(Math.max(0, now - t) / 60000)

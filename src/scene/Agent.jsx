@@ -1,14 +1,14 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
-import * as THREE from 'three'
 import { STATUS, TRAVADO_MS } from '../status.js'
 import { useNow, duracao } from '../time.js'
-import { darkSteel, steel, chairMetal, screen } from './materials.js'
+import { darkSteel, steel, chairMetal, screen, paintWhite } from './materials.js'
 import Person from './Person.jsx'
 import SetorProp, { chaveSetor } from './SetorProp.jsx'
 import { DECK_Y } from './Sector.jsx'
 import { overlay } from './overlay.js'
+import Mesclar from './Mesclar.jsx'
 
 // Plaquinha do agente. Por padrão é só um ponto neon; vira plaquinha completa quando
 // o agente pede atenção (erro, aguardando, travado), ao passar o mouse, ao selecionar
@@ -34,23 +34,17 @@ function Tag({ nome, status, desde, force }) {
 // memo + props simples: só redesenha quando nome/status/posição/seleção mudam.
 // As animações rodam no useFrame mexendo direto nos objetos, sem re-render do React.
 function Agent({ id, nome, status, desde, setor, cor, x, z, selected, onSelect }) {
-  const cfg = STATUS[status] ?? STATUS.ocioso
   const [hover, setHover] = useState(false)
   const ring = useRef()
-  const fase = useMemo(() => Math.random() * Math.PI * 2, [])
 
-  // Material do anel: a única peça 3D que mostra o status.
-  const ringMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#000000', toneMapped: false }), [])
-  useEffect(() => { ringMat.emissive.set(cfg.color) }, [cfg.color, ringMat])
-  useEffect(() => () => ringMat.dispose(), [ringMat])
-
+  // O status agora fica na torre de andon do setor. O aro no chão só marca
+  // o agente selecionado ou sob o mouse.
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime
-    const alvo = cfg.pulse ? 0.5 + 2.5 * (0.5 + 0.5 * Math.sin(t * 4 + fase)) : cfg.glow
-    const k = Math.min(1, delta * (cfg.pulse ? 20 : 6))
-    ringMat.emissiveIntensity += (alvo - ringMat.emissiveIntensity) * k
-
-    const s = selected || hover ? 1.3 + Math.sin(t * 3) * 0.05 : 1
+    const ativo = selected || hover
+    ring.current.visible = ativo
+    if (!ativo) return
+    const s = 1.3 + Math.sin(t * 3) * 0.05
     ring.current.scale.x += (s - ring.current.scale.x) * Math.min(1, delta * 8)
     ring.current.scale.z = ring.current.scale.x
   })
@@ -69,6 +63,7 @@ function Agent({ id, nome, status, desde, setor, cor, x, z, selected, onSelect }
       onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = 'pointer' }}
       onPointerOut={() => { setHover(false); document.body.style.cursor = '' }}
     >
+      <Mesclar deps={[setor]}>
       {/* Mesa */}
       <mesh material={darkSteel} position={[0, 0.75, -0.45]}>
         <boxGeometry args={[1.5, 0.06, 0.75]} />
@@ -104,16 +99,17 @@ function Agent({ id, nome, status, desde, setor, cor, x, z, selected, onSelect }
         <boxGeometry args={[0.5, 0.56, 0.05]} />
       </mesh>
 
-      {/* A pessoa, sentada de frente para a mesa */}
-      <group position={[0, 0, 0.3]}>
-        <Person id={id} capacete={cor} trabalhando={status === 'trabalhando'} fone={chaveSetor(setor) === 'CONTEUDO'} />
-      </group>
-
       {/* Objeto típico do setor */}
       <SetorProp setor={setor} />
+      </Mesclar>
 
-      {/* Anel de neon no chão: cor do status */}
-      <mesh ref={ring} material={ringMat} position={[0, 0.02, 0.15]}>
+      {/* A pessoa, sentada de frente para a mesa */}
+      <group position={[0, 0, 0.3]}>
+        <Person id={id} trabalhando={status === 'trabalhando'} fone={chaveSetor(setor) === 'CONTEUDO'} />
+      </group>
+
+      {/* Aro branco no chão: agente selecionado ou sob o mouse */}
+      <mesh ref={ring} material={paintWhite} position={[0, 0.02, 0.15]} visible={false}>
         <cylinderGeometry args={[0.62, 0.62, 0.025, 40, 1, true]} />
       </mesh>
 

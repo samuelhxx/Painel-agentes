@@ -1,16 +1,17 @@
 :root {
-  --bg: #05070f;
-  --brand: #a855f7; /* roxo neon (mesmo tom do #73018C, mais claro para brilhar) */
-  --brand-dark: #73018c; /* roxo oficial AS Construction */
-  --amber: #ffb000;
-  --magenta: #ff2d95;
-  --lime: #39ff14;
+  --bg: #d6dadf; /* galpão de dia: o mesmo cinza claro do fundo da cena */
+  --brand: #8c2ce1; /* roxo de destaque AS Construction (identidade-as.md) */
+  --brand-dark: #73018c; /* roxo do logo AS Construction (identidade-as.md) */
+  --steel: #2b3037; /* chapa das alças */
+  --amber: #f5b400; /* = andon amarelo */
+  --magenta: #e5242b; /* = andon vermelho */
+  --lime: #22c55e; /* = andon verde */
   --yellow: #ffd400;
   --text: #d6dbe6;
   --gray: #7d8596;
   --gray-dim: #4b5263;
   --panel-bg: rgba(5, 7, 15, 0.96);
-  --panel-w: 320px;
+  --panel-w: min(320px, 88vw);
   --log-h: 124px;
   --cond: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
@@ -30,10 +31,7 @@ button { font: inherit; }
 /* ── Área da cena 3D ───────────────────────── */
 .scene {
   position: fixed;
-  top: 0;
-  left: var(--panel-w);
-  right: 0;
-  bottom: var(--log-h);
+  inset: 0;
   overflow: hidden;
   z-index: 0;
 }
@@ -49,18 +47,21 @@ button { font: inherit; }
   display: flex;
   flex-direction: column;
   background: var(--panel-bg);
-  border-right: 1px solid var(--brand);
-  box-shadow: 2px 0 24px rgba(168, 85, 247, 0.22);
+  border-right: 2px solid var(--brand-dark);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.28);
   padding-top: env(safe-area-inset-top, 0px);
+  transform: translateX(-102%);
+  transition: transform 0.28s ease-out;
 }
-.side-head { padding: 18px 18px 14px; border-bottom: 1px solid rgba(168, 85, 247, 0.45); }
+.side-open { transform: none; }
+.side-head { padding: 18px 18px 14px; border-bottom: 1px solid rgba(140, 44, 225, 0.45); }
 .side-head h1 {
   margin: 0;
   font-size: 19px;
   font-weight: 700;
   letter-spacing: 0.28em;
   color: var(--brand);
-  text-shadow: 0 0 8px var(--brand), 0 0 22px rgba(168, 85, 247, 0.6);
+  text-shadow: 0 0 8px var(--brand), 0 0 22px rgba(140, 44, 225, 0.6);
 }
 .side-sub { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.34em; color: var(--text); }
 .side-meta { margin: 10px 0 0; font-size: 10px; letter-spacing: 0.08em; color: var(--gray); }
@@ -71,7 +72,7 @@ button { font: inherit; }
   grid-template-columns: repeat(3, 1fr);
   gap: 12px 8px;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(168, 85, 247, 0.45);
+  border-bottom: 1px solid rgba(140, 44, 225, 0.45);
 }
 .counter { display: flex; flex-direction: column; min-width: 0; }
 .counter b {
@@ -138,26 +139,91 @@ button { font: inherit; }
   font-size: 10px;
   letter-spacing: 0.12em;
   color: var(--gray);
-  border-top: 1px solid rgba(168, 85, 247, 0.45);
+  border-top: 1px solid rgba(140, 44, 225, 0.45);
 }
 
-.drawer-toggle { display: none; }
+/* ── Alças de painel elétrico (abrem e recolhem as gavetas) ── */
+.alca {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at var(--p1) , #9aa0b4 0 3px, #1a1d22 3.5px 5px, transparent 5.5px),
+    radial-gradient(circle at var(--p2) , #9aa0b4 0 3px, #1a1d22 3.5px 5px, transparent 5.5px),
+    linear-gradient(var(--dir), #3a4048, var(--steel) 55%, #1f2328);
+  border: 2px solid var(--brand-dark);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  transition: left 0.28s ease-out, bottom 0.28s ease-out, background-color 0.2s;
+}
+.alca:hover, .alca-aberta { border-color: var(--brand); }
+.alca-grip {
+  flex: 0 0 auto;
+  background: repeating-linear-gradient(var(--grip), rgba(255, 255, 255, 0.28) 0 2px, rgba(0, 0, 0, 0.45) 2px 5px);
+  border-radius: 2px;
+}
+.alca-side {
+  --dir: 90deg;
+  --grip: 0deg;
+  --p1: 50% 12px;
+  --p2: 50% calc(100% - 12px);
+  top: 50%;
+  left: 0;
+  width: 34px;
+  height: 180px;
+  flex-direction: column;
+  padding: 26px 0;
+  transform: translateY(-50%);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+}
+.alca-side.alca-aberta { left: var(--panel-w); }
+.alca-side .alca-grip { width: 14px; height: 26px; }
+.alca-side .alca-txt { writing-mode: vertical-rl; transform: rotate(180deg); }
+.alca-log {
+  --dir: 180deg;
+  --grip: 90deg;
+  --p1: 12px 50%;
+  --p2: calc(100% - 12px) 50%;
+  left: 50%;
+  bottom: 0;
+  width: 200px;
+  height: 34px;
+  padding: 0 26px;
+  transform: translateX(-50%);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+}
+.alca-log.alca-aberta { bottom: calc(var(--log-h) + env(safe-area-inset-bottom, 0px)); }
+.alca-log .alca-grip { width: 26px; height: 14px; }
 
 /* ── Log de eventos (rodapé) ───────────────── */
 .log {
   position: fixed;
   z-index: 10;
-  left: var(--panel-w);
+  left: 0;
   right: 0;
   bottom: 0;
-  height: var(--log-h);
+  height: calc(var(--log-h) + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   background: var(--panel-bg);
-  border-top: 1px solid var(--brand);
-  box-shadow: 0 -2px 20px rgba(168, 85, 247, 0.18);
+  border-top: 2px solid var(--brand-dark);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateY(102%);
+  transition: transform 0.28s ease-out;
 }
+.log-open { transform: none; }
 .log-head {
   display: flex;
   justify-content: space-between;
@@ -166,7 +232,7 @@ button { font: inherit; }
   font-size: 10px;
   letter-spacing: 0.2em;
   color: var(--brand);
-  border-bottom: 1px solid rgba(168, 85, 247, 0.25);
+  border-bottom: 1px solid rgba(140, 44, 225, 0.25);
 }
 .log-hint { color: var(--yellow); opacity: 0.85; text-align: right; }
 .log-list {
@@ -271,7 +337,7 @@ button { font: inherit; }
   flex-direction: column;
   background: rgba(3, 5, 10, 0.96);
   border-left: 1px solid var(--brand);
-  box-shadow: -4px 0 28px rgba(168, 85, 247, 0.3);
+  box-shadow: -4px 0 28px rgba(140, 44, 225, 0.3);
   color: var(--lime);
   font-size: 12.5px;
   padding-top: env(safe-area-inset-top, 0px);
@@ -285,7 +351,7 @@ button { font: inherit; }
   padding: 10px 14px;
   font-size: 11px;
   color: var(--brand);
-  border-bottom: 1px solid rgba(168, 85, 247, 0.45);
+  border-bottom: 1px solid rgba(140, 44, 225, 0.45);
 }
 .term-bar button { color: var(--magenta); background: none; border: 0; cursor: pointer; padding: 4px; }
 .term-bar button:hover { text-shadow: 0 0 6px var(--magenta); }
@@ -301,37 +367,12 @@ button { font: inherit; }
   font-size: 10px;
   letter-spacing: 0.2em;
   color: var(--gray-dim);
-  border-top: 1px solid rgba(168, 85, 247, 0.3);
+  border-top: 1px solid rgba(140, 44, 225, 0.3);
 }
 
 /* ── Tela estreita: painel vira gaveta ─────── */
 @media (max-width: 900px) {
-  :root { --panel-w: 0px; --log-h: 112px; }
-  .side {
-    width: min(320px, 88vw);
-    z-index: 45;
-    padding-top: calc(44px + env(safe-area-inset-top, 0px));
-    transform: translateX(-102%);
-    transition: transform 0.25s ease-out;
-  }
-  .side-open { transform: none; }
-  .drawer-toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: fixed;
-    z-index: 50;
-    top: calc(8px + env(safe-area-inset-top, 0px));
-    left: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    letter-spacing: 0.22em;
-    color: var(--brand);
-    background: var(--panel-bg);
-    border: 1px solid var(--brand);
-    box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
-    cursor: pointer;
-  }
+  :root { --log-h: 112px; }
   .log-hint { display: none; }
   .log-list li { font-size: 10.5px; }
 }
@@ -347,7 +388,7 @@ button { font: inherit; }
   color: #ffffff;
   background: rgba(5, 7, 15, 0.85);
   border: 1px solid var(--brand);
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 10px rgba(140, 44, 225, 0.6);
   user-select: none;
 }
 
@@ -360,7 +401,7 @@ button { font: inherit; }
   position: fixed;
   z-index: 25;
   top: calc(14px + env(safe-area-inset-top, 0px));
-  left: calc(var(--panel-w) + (100vw - var(--panel-w)) / 2);
+  left: 50%;
   transform: translateX(-50%);
   padding: 9px 18px;
   font-size: 13px;
@@ -369,11 +410,11 @@ button { font: inherit; }
   color: #ffffff;
   background: rgba(115, 1, 140, 0.85);
   border: 1px solid var(--brand);
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.7), inset 0 0 10px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 14px rgba(140, 44, 225, 0.7), inset 0 0 10px rgba(140, 44, 225, 0.35);
   cursor: pointer;
   animation: overview-in 0.2s ease-out;
 }
-.overview-btn:hover { background: rgba(168, 85, 247, 0.9); }
+.overview-btn:hover { background: rgba(140, 44, 225, 0.9); }
 @keyframes overview-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translateX(-50%); } }
 @media (max-width: 900px) {
   .overview-btn { top: calc(56px + env(safe-area-inset-top, 0px)); font-size: 11px; }
@@ -383,8 +424,9 @@ button { font: inherit; }
 .retomar-btn {
   position: fixed;
   z-index: 25;
-  right: calc(14px + env(safe-area-inset-right, 0px));
+  left: calc(14px + env(safe-area-inset-left, 0px));
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  transition: bottom 0.28s ease-out;
   padding: 9px 18px;
   font-size: 12px;
   font-weight: 700;
@@ -394,7 +436,7 @@ button { font: inherit; }
   border: 1px solid var(--brand);
   cursor: pointer;
 }
-.retomar-btn:hover { background: rgba(168, 85, 247, 0.9); }
+.retomar-btn:hover { background: rgba(140, 44, 225, 0.9); }
 
 /* ── Terminal: atalho para responder a aprovação ── */
 .term-apv {
@@ -413,7 +455,8 @@ button { font: inherit; }
   position: fixed;
   z-index: 55;
   right: calc(14px + env(safe-area-inset-right, 0px));
-  bottom: calc(var(--log-h) + 14px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  transition: bottom 0.28s ease-out;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -687,3 +730,11 @@ button { font: inherit; }
   .apv-indicador { animation-duration: 3s; }
   .apv-card-out { animation-duration: 0.01s; }
 }
+
+/* Log aberto: o que fica no rodapé sobe junto, para não cobrir o log. */
+body:has(.log-open) .apv-indicador,
+body:has(.log-open) .retomar-btn { bottom: calc(var(--log-h) + 14px + env(safe-area-inset-bottom, 0px)); }
+
+/* Painel de agentes aberto: o log começa depois dele, para nenhuma linha ficar escondida. */
+body:has(.side-open) .log { left: var(--panel-w); }
+.log { transition: transform 0.28s ease-out, left 0.28s ease-out; }

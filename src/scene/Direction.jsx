@@ -1,12 +1,13 @@
 import { memo, useMemo } from 'react'
-import { Grid, Html } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { isStuck, AMBAR } from '../status.js'
 import { useNow } from '../time.js'
-import { steel, darkSteel, paintYellow, neon, hazard, brilho, lampBulb, lampShade } from './materials.js'
+import { steel, darkSteel, hazard, brilho, lampBulb, lampShade, screen, placa, fosco } from './materials.js'
 import { overlay } from './overlay.js'
 import Person, { hashId } from './Person.jsx'
 import { focarEm } from './focus.js'
+import Mesclar from './Mesclar.jsx'
 
 // Sala da Direção: mezanino elevado de frente para o galpão. Fixa no código, não vem da planilha.
 const MY = 4.2 // altura do piso do mezanino
@@ -15,20 +16,17 @@ const DZ = 5 // profundidade do mezanino
 const RW = 7 // largura da sala de vidro
 const RH = 2.6 // pé-direito da sala
 const RAIL = 1.0 // altura do guarda-corpo
-const ROXO = '#A855F7'
 const DEGRAUS = 20
 const PISADA = 0.28
 
-const vidro = new THREE.MeshPhysicalMaterial({
-  color: '#CFE0FF',
-  transmission: 0.95,
-  opacity: 0.18,
+// Vidro simples: só transparência. Vidro "físico" (transmissão) pesaria no tablet.
+const vidro = new THREE.MeshStandardMaterial({
+  color: '#DCE8F2',
   transparent: true,
-  roughness: 0.05,
-  metalness: 0,
-  thickness: 0.02,
-  ior: 1.45,
+  opacity: 0.22,
+  roughness: 0.1,
   depthWrite: false,
+  side: THREE.DoubleSide,
 })
 
 // Cilindro de um ponto a outro (tubos do corrimão e guarda-corpo).
@@ -94,11 +92,10 @@ function Direction({ zc, agentes }) {
   const x0 = DX / 2 // a escada sai da lateral direita do mezanino
   const topoSala = MY + RH
 
-  const glow = neon(ROXO)
   const mesaZ = zr - 2.0
   const mesaY = MY + 0.75
 
-  // 12 arestas da caixa de vidro em neon roxo
+  // 12 arestas da caixa de vidro: caixilho de aço
   const arestas = useMemo(() => {
     const a = []
     const xs = [-RW / 2, RW / 2]
@@ -110,8 +107,6 @@ function Direction({ zc, agentes }) {
     }
     return a
   }, [zb, zr, zm, RD, topoSala])
-
-  const alvoLuz = useMemo(() => new THREE.Object3D(), [])
 
   // Clique no mezanino ou na placa: a câmera vai até a sala da Direção.
   const focar = () => focarEm(0, zm, { y: MY + 1.2, dist: 11 })
@@ -127,6 +122,7 @@ function Direction({ zc, agentes }) {
       onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer' }}
       onPointerOut={() => { document.body.style.cursor = '' }}
     >
+      <Mesclar deps={[zc]}>
       {/* ── Estrutura: colunas de aço e vigas aparentes ── */}
       {[-DX / 2 + 0.3, 0, DX / 2 - 0.3].map((x) =>
         [zc - DZ / 2 + 0.3, zc + DZ / 2 - 0.3].map((z) => (
@@ -134,9 +130,11 @@ function Direction({ zc, agentes }) {
             <mesh material={darkSteel} position={[0, (MY - 0.4) / 2, 0]}>
               <boxGeometry args={[0.32, MY - 0.4, 0.32]} />
             </mesh>
-            <mesh material={paintYellow} position={[0, 0.5, 0]}>
-              <boxGeometry args={[0.34, 1, 0.34]} />
-            </mesh>
+            {[0, Math.PI / 2, Math.PI, -Math.PI / 2].map((r) => (
+              <mesh key={r} material={hazard(0.34)} position={[Math.sin(r) * 0.161, 0.6, Math.cos(r) * 0.161]} rotation={[0, r, 0]}>
+                <planeGeometry args={[0.34, 1.2]} />
+              </mesh>
+            ))}
           </group>
         )),
       )}
@@ -155,17 +153,9 @@ function Direction({ zc, agentes }) {
       <mesh material={steel} position={[0, MY - 0.06, zc]}>
         <boxGeometry args={[DX, 0.12, DZ]} />
       </mesh>
-      <Grid
-        position={[0, MY + 0.004, zc]}
-        args={[DX, DZ]}
-        cellSize={0.5}
-        cellThickness={0.6}
-        cellColor="#1A2029"
-        sectionSize={2.5}
-        sectionThickness={1.1}
-        sectionColor="#2A3038"
-        fadeDistance={200}
-      />
+      <mesh material={fosco('#9CA2A9', 0.6)} position={[0, MY + 0.004, zc]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[DX, DZ]} />
+      </mesh>
       <mesh material={hazard(DX)} position={[0, MY - 0.06, zf + 0.011]}>
         <boxGeometry args={[DX + 0.02, 0.12, 0.02]} />
       </mesh>
@@ -216,7 +206,7 @@ function Direction({ zc, agentes }) {
         </mesh>
       ))}
       {arestas.map((e, i) => (
-        <mesh key={i} material={glow} position={e.p}>
+        <mesh key={i} material={darkSteel} position={e.p}>
           <boxGeometry args={e.s} />
         </mesh>
       ))}
@@ -233,8 +223,6 @@ function Direction({ zc, agentes }) {
         <mesh material={lampBulb} position={[0, -0.26, 0]}>
           <sphereGeometry args={[0.1, 12, 8]} />
         </mesh>
-        <primitive object={alvoLuz} position={[0, -RH, 0]} />
-        <spotLight target={alvoLuz} position={[0, -0.3, 0]} color="#FFFFFF" intensity={70} angle={1.05} penumbra={0.6} decay={1.5} distance={7} />
       </group>
 
       {/* mesa maior, virada para o galpão, com três monitores roxos */}
@@ -252,7 +240,7 @@ function Direction({ zc, agentes }) {
             <mesh material={darkSteel}>
               <boxGeometry args={[0.66, 0.4, 0.04]} />
             </mesh>
-            <mesh material={brilho(ROXO, 2)} position={[0, 0, 0.022]}>
+            <mesh material={screen} position={[0, 0, 0.022]}>
               <planeGeometry args={[0.6, 0.34]} />
             </mesh>
             <mesh material={steel} position={[0, -0.27, -0.02]}>
@@ -261,22 +249,21 @@ function Direction({ zc, agentes }) {
           </group>
         ))}
         {/* pilha de pastas: uma por item em REQUER ATENÇÃO */}
-        <group position={[0.85, mesaY + 0.03, 0.2]}>
+        <group position={[0.85, mesaY + 0.03, 0.2]} userData={{ vivo: true }}>
           <Pastas agentes={agentes} />
         </group>
       </group>
 
       {/* o diretor, em pé, encostado no vidro olhando o galpão */}
-      <group position={[-0.9, MY, zr - 0.47]} rotation={[0, Math.PI, 0]}>
-        <Person id="direcao-samuel" pose="em_pe" capacete="#F4F4F4" />
+      <group position={[-0.9, MY, zr - 0.47]} rotation={[0, Math.PI, 0]} userData={{ vivo: true }}>
+        <Person id="direcao-samuel" pose="em_pe" />
       </group>
 
-      {/* placa da sala e plaquinha do diretor (sempre visíveis) */}
-      <Html center position={[0, topoSala + 0.45, zr]} zIndexRange={[40, 0]} portal={overlay}>
-        <div className="sector-sign sector-sign-link" style={{ '--c': ROXO }} onClick={focar} title="Aproximar da Direção">
-          DIREÇÃO
-        </div>
-      </Html>
+      {/* placa de chapa da sala, na cor da marca, e plaquinha do diretor (sempre visível) */}
+      <mesh material={placa('DIREÇÃO', { w: 512, h: 128, fonte: 80 })} position={[0, topoSala + 0.45, zr + 0.02]} onClick={clique}>
+        <planeGeometry args={[2.4, 0.6]} />
+      </mesh>
+      </Mesclar>
       <Html center position={[-0.9, MY + 2.3, zr - 0.47]} zIndexRange={[3000, 2900]} portal={overlay} style={{ pointerEvents: 'none' }}>
         <div className="boss-tag">SAMUEL · DIRETOR COMERCIAL</div>
       </Html>

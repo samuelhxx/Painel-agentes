@@ -1,5 +1,5 @@
 import { STATUS, AMBAR, MAGENTA, isStuck, isLate } from '../status.js'
-import { useNow, duracao, diaHora } from '../time.js'
+import { useNow, duracao, diaHora, quando } from '../time.js'
 
 function Linha({ k, v, cor }) {
   return (
@@ -28,8 +28,8 @@ export default function Terminal({ agente: a, onClose, onAprovacoes }) {
     a.proxima == null
       ? 'sem rotina'
       : atrasada
-        ? `${diaHora(a.proxima, now)} · ROTINA ATRASADA há ${duracao(now - a.proxima)}`
-        : `${diaHora(a.proxima, now)} (em ${duracao(a.proxima - now)})`
+        ? `${quando(a.proxima, now)} · ROTINA ATRASADA há ${duracao(now - a.proxima)}`
+        : quando(a.proxima, now)
 
   return (
     <aside className="terminal">

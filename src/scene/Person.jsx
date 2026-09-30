@@ -2,6 +2,8 @@ import { memo, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { fosco, brilho } from './materials.js'
+import { MARCA } from '../marca.js'
+import Mesclar from './Mesclar.jsx'
 
 // Corpo humano montado com primitivas. Unidade = 1 cabeça = 0,25.
 // Em pé: ~7 cabeças de altura; ombros com 2 cabeças de largura; ombro→quadril 2,5 cabeças.
@@ -12,7 +14,9 @@ const PELES = ['#8D5524', '#C68642', '#E0AC69', '#F1C27D', '#A0662F', '#FFDBAC']
 const CAMISAS = ['#2B3A55', '#3A3F47', '#4A3B2F', '#2F4A3A', '#4B2F3F', '#34495E']
 const CALCA = '#1E2530'
 const SAPATO = '#15171C'
-const COLETE = '#FFD400'
+// Uniforme da AS: colete e capacete no roxo da marca, faixa refletiva prateada no colete.
+const UNIFORME = MARCA.roxoMarca
+const REFLETIVO = '#D9DDE2'
 
 export function hashId(id) {
   let h = 7
@@ -57,7 +61,7 @@ const POSES = {
 }
 const esp = ([x, y, z]) => [-x, y, z]
 
-function Person({ id, pose = 'sentado', capacete, trabalhando = false, fone = false }) {
+function Person({ id, pose = 'sentado', capacete = UNIFORME, trabalhando = false, fone = false }) {
   const P = POSES[pose]
   const h = hashId(id)
   // ±5% de altura e largura, fixo por id: ninguém fica igual.
@@ -67,8 +71,9 @@ function Person({ id, pose = 'sentado', capacete, trabalhando = false, fone = fa
   const camisa = fosco(CAMISAS[(h >> 3) % CAMISAS.length])
   const calca = fosco(CALCA)
   const sapato = fosco(SAPATO, 0.5)
-  const colete = brilho(COLETE, 3)
-  const helmet = brilho(capacete, 1)
+  const colete = fosco(UNIFORME, 0.7)
+  const faixa = brilho(REFLETIVO, 0.35)
+  const helmet = fosco(capacete, 0.35)
 
   const Y = P.quadril
   const ombro = [0.2, Y + 0.54, 0]
@@ -93,6 +98,8 @@ function Person({ id, pose = 'sentado', capacete, trabalhando = false, fone = fa
 
   return (
     <group scale={[larg, alt, larg]}>
+      {/* parte parada (quadril, pernas, braços): poucas peças, ver Mesclar.jsx */}
+      <Mesclar>
       {/* Quadril */}
       <mesh material={calca} position={[0, Y, 0]}>
         <boxGeometry args={[0.36, 0.16, 0.24]} />
@@ -127,18 +134,24 @@ function Person({ id, pose = 'sentado', capacete, trabalhando = false, fone = fa
         )
       })}
 
+      </Mesclar>
+
       {/* Tronco, ombros, colete, pescoço e cabeça (parte que se mexe) */}
-      <group ref={tronco}>
+      <group ref={tronco} userData={{ vivo: true }}>
+        <Mesclar>
         <mesh material={camisa} position={[0, Y + 0.33, 0]} scale={[1, 1, 0.6]}>
           <cylinderGeometry args={[0.2, 0.15, 0.5, SEG]} />
         </mesh>
-        {/* colete refletivo: duas faixas finas em volta do tronco */}
+        {/* colete: capa roxa por cima da camisa, com duas faixas refletivas */}
+        <mesh material={colete} position={[0, Y + 0.31, 0]} scale={[1, 1, 0.62]}>
+          <cylinderGeometry args={[0.212, 0.168, 0.42, SEG]} />
+        </mesh>
         {[
-          [Y + 0.2, 0.172],
-          [Y + 0.38, 0.187],
+          [Y + 0.2, 0.185],
+          [Y + 0.38, 0.203],
         ].map(([y, r]) => (
-          <mesh key={y} material={colete} position={[0, y, 0]} scale={[1, 1, 0.6]}>
-            <cylinderGeometry args={[r, r, 0.03, SEG, 1, true]} />
+          <mesh key={y} material={faixa} position={[0, y, 0]} scale={[1, 1, 0.62]}>
+            <cylinderGeometry args={[r, r, 0.035, SEG, 1, true]} />
           </mesh>
         ))}
         {[1, -1].map((s) => (
@@ -150,7 +163,9 @@ function Person({ id, pose = 'sentado', capacete, trabalhando = false, fone = fa
           <cylinderGeometry args={[0.045, 0.05, 0.09, SEG]} />
         </mesh>
 
+        </Mesclar>
         <group ref={cabeca} position={[0, cabecaY, 0]}>
+          <Mesclar>
           <mesh material={pele} scale={[1, 0.93, 1]}>
             <sphereGeometry args={[0.11, SEG, 10]} />
           </mesh>
@@ -173,6 +188,7 @@ function Person({ id, pose = 'sentado', capacete, trabalhando = false, fone = fa
               </mesh>
             </>
           )}
+          </Mesclar>
         </group>
       </group>
     </group>

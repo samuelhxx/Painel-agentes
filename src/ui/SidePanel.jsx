@@ -1,9 +1,10 @@
 import { STATUS, AMBAR, MAGENTA, isStuck, isLate } from '../status.js'
 import { REFRESH_MS } from '../config.js'
-import { useNow, ha, duracao, hhmmss, diaHora } from '../time.js'
+import { useNow, ha, duracao, hhmmss, quando } from '../time.js'
+import { MARCA } from '../marca.js'
 
 const CONTADORES = [
-  { key: 'total', label: 'TOTAL', color: '#A855F7' },
+  { key: 'total', label: 'TOTAL', color: MARCA.roxo },
   { key: 'trabalhando', label: 'TRABALHANDO' },
   { key: 'aguardando_aprovacao', label: 'AGUARDANDO APROVAÇÃO' },
   { key: 'ocioso', label: 'OCIOSOS' },
@@ -24,7 +25,7 @@ function motivo(a, now) {
   return { texto: `aguardando aprovação há ${duracao(now - a.desde)} · ${a.tarefa}`, cor: AMBAR }
 }
 
-// Painel fixo da esquerda (vira gaveta em tela estreita).
+// Painel da esquerda: gaveta que desliza para dentro pela alça AGENTES.
 export default function SidePanel({ agentes, setores, fonte, sync, erro, aberto, onSelect }) {
   const now = useNow(1000)
 
@@ -38,7 +39,7 @@ export default function SidePanel({ agentes, setores, fonte, sync, erro, aberto,
   const proximas = agentes.filter((a) => a.proxima != null).sort((a, b) => a.proxima - b.proxima)
 
   return (
-    <aside className={`side${aberto ? ' side-open' : ''}`}>
+    <aside className={`side${aberto ? ' side-open' : ''}`} aria-hidden={!aberto}>
       <header className="side-head">
         <h1>AS CONSTRUCTION</h1>
         <p className="side-sub">PAINEL DE AGENTES</p>
@@ -109,14 +110,10 @@ export default function SidePanel({ agentes, setores, fonte, sync, erro, aberto,
               {proximas.map((a) => {
                 const atrasada = isLate(a, now)
                 return (
-                  <li key={a.id} className="row-inline" style={{ '--c': atrasada ? MAGENTA : '#A855F7' }}>
+                  <li key={a.id} className="row-inline" style={{ '--c': atrasada ? MAGENTA : MARCA.roxo }}>
                     <Nome agente={a} onSelect={onSelect} />
                     <span className={`row-time${atrasada ? ' row-late' : ''}`}>
-                      {atrasada
-                        ? `atrasada há ${duracao(now - a.proxima)}`
-                        : a.proxima - now < 12 * 3600000
-                          ? `em ${duracao(a.proxima - now)}`
-                          : diaHora(a.proxima, now)}
+                      {atrasada ? `atrasada há ${duracao(now - a.proxima)}` : quando(a.proxima, now)}
                     </span>
                   </li>
                 )

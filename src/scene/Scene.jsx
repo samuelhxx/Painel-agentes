@@ -1,19 +1,22 @@
 import { memo, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import Sector from './Sector.jsx'
 import Agent from './Agent.jsx'
-import { Floor, Aisles, Truss, Lamp } from './Hall.jsx'
+import { Floor, Aisles, Truss, Galpao } from './Hall.jsx'
+import Empilhadeira from './Empilhadeira.jsx'
+import Props from './Props.jsx'
+import Mesclar from './Mesclar.jsx'
 import { overlay } from './overlay.js'
 import { foco } from './focus.js'
 import Billboard from './Billboard.jsx'
 import Direction from './Direction.jsx'
-import { STATUS } from '../status.js'
+import { STATUS, piorStatus } from '../status.js'
 import { hhmm } from '../time.js'
 
-const BG = '#05070F'
+// Galpão de dia: cinza claro no fundo, sem o preto do visual antigo.
+const BG = '#D6DADF'
 const ORIGEM = new THREE.Vector3()
 
 // Enquadra a cena inteira (galpão, telão e mezanino) na primeira vez que os dados chegam.
@@ -28,9 +31,10 @@ function CameraRig({ minX, maxX, minZ, maxZ, ready }) {
     const cz = (minZ + maxZ) / 2
     // Na vista diagonal, o que ocupa a largura da tela é a extensão ao longo de (1, 0, -1).
     const span = ((maxX - minX) + (maxZ - minZ)) / Math.SQRT2
-    const dist = Math.min(78, (span * 0.72 + 4) * Math.max(1, 1.5 / aspect))
+    const dist = Math.min(90, (span * 0.8 + 6) * Math.max(1, 1.5 / aspect))
     const alvo = new THREE.Vector3(cx, 2.4, cz)
-    camera.position.copy(alvo).add(new THREE.Vector3(1, 0.85, 1).normalize().multiplyScalar(dist))
+    // vista mais de cima que antes: as tesouras do telhado atrapalham menos a leitura do chão
+    camera.position.copy(alvo).add(new THREE.Vector3(1, 1.25, 1).normalize().multiplyScalar(dist))
     controls.target.copy(alvo)
     controls.update()
     // guarda a visão geral para o botão VISÃO GERAL / Esc / clique no vazio
@@ -112,6 +116,15 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
   const zMez = -depth / 2 - 4.6
   const xTelao = -width / 2 - 1.6
 
+  // Limites do galpão e corredores: crescem junto com as células quando entra setor novo.
+  const xMin = -width / 2 - 8
+  const xMax = width / 2 + 8
+  const zMin = zMez - 3.2
+  const zPedestre = depth / 2 + 1.9 // corredor verde de pedestre, na frente das células
+  const zCorredor = depth / 2 + 4.4 // corredor principal das empilhadeiras
+  const zMax = zCorredor + 2.4
+  const zMeio = rowZ.length > 1 ? (rowZ[0] + rowZ[1]) / 2 : null
+
   const n = useMemo(() => {
     const c = { trabalhando: 0, aguardando_aprovacao: 0, ocioso: 0, erro: 0 }
     for (const a of agentes) c[a.status]++
@@ -124,14 +137,18 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
     <div className="scene" ref={overlay} data-zoom="mid">
       <Canvas
         dpr={[1, 1.5]}
-        onCreated={({ gl }) => { gl.transmissionResolutionScale = 0.5 }}
         camera={{ position: [17, 14, 17], fov: 35, near: 0.1, far: 200 }}
-        gl={{ antialias: false, powerPreference: 'high-performance' }}
+        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        // ?diag na URL: expõe a contagem de desenho por quadro, para medir peso da cena
+        onCreated={({ gl }) => { if (location.search.includes('diag')) window.__diag = gl.info }}
         onPointerMissed={(e) => { if (e.type === 'click') onVazio() }}
       >
         <color attach="background" args={[BG]} />
-        <fogExp2 attach="fog" args={[BG, 0.02]} />
-        <ambientLight intensity={0.04} />
+        <fog attach="fog" args={[BG, 70, 150]} />
+        {/* luz de dia: céu claro + sol. Sem sombra calculada (pesada no tablet). */}
+        <hemisphereLight args={['#FFFFFF', '#9EA4AA', 1.5]} />
+        <directionalLight position={[10, 24, 14]} intensity={1.6} />
+        <ambientLight intensity={0.25} />
 
         <OrbitControls
           makeDefault
@@ -141,26 +158,35 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
           dampingFactor={0.08}
           enablePan={false}
           minDistance={7}
-          maxDistance={80}
+          maxDistance={95}
           minPolarAngle={0.25}
           maxPolarAngle={1.3}
         />
-        <CameraRig minX={xTelao - 1.5} maxX={width / 2 + 6.5} minZ={zMez - 2.5} maxZ={depth / 2 + 1} ready={sectors.length > 0} />
+        <CameraRig minX={xTelao - 1.5} maxX={width / 2 + 6.5} minZ={zMez - 2.5} maxZ={zCorredor} ready={sectors.length > 0} />
         <ZoomWatcher />
         <CameraFocus />
 
         <Floor onVazio={onVazio} />
-        <Aisles width={width} depth={depth} />
-
-        {rowZ.map((z, i) => (
-          <Truss key={i} length={width + 6} z={z} />
-        ))}
+        {sectors.length > 0 && (
+          <>
+            {/* tudo o que é parado no galpão vira poucas peças (ver Mesclar.jsx) */}
+            <Mesclar deps={[xMin, xMax, zMin, zMax, zMeio, rowZ.join(',')]}>
+              <Galpao xMin={xMin} xMax={xMax} zMin={zMin} zMax={zMax} />
+              <Aisles xMin={xMin} xMax={xMax} zPedestre={zPedestre} zCorredor={zCorredor} zMeio={zMeio} />
+              <Props xMin={xMin} xMax={xMax} zMin={zMin} zCorredor={zCorredor} />
+              {/* tesouras do telhado sobre cada fileira de células */}
+              {rowZ.map((z, i) => (
+                <Truss key={i} length={xMax - xMin - 1} z={z} />
+              ))}
+            </Mesclar>
+            {/* uma empilhadeira no corredor principal; a segunda no corredor do meio */}
+            <Empilhadeira xA={xMin + 3.5} xB={xMax - 3.5} z={zCorredor} />
+            {zMeio != null && <Empilhadeira xA={xMin + 3.5} xB={xMax - 3.5} z={zMeio} atraso={0.6} />}
+          </>
+        )}
 
         {sectors.map((s, i) => (
-          <group key={s.nome}>
-            <Sector nome={s.nome} numero={i + 1} x={s.x} z={s.z} w={s.w} d={s.d} color={s.color} />
-            <Lamp x={s.x} z={s.z} />
-          </group>
+          <Sector key={s.nome} nome={s.nome} numero={i + 1} x={s.x} z={s.z} w={s.w} d={s.d} status={piorStatus(s.lista)} />
         ))}
 
         {rowZ.length > 0 && (
@@ -176,7 +202,7 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
         )}
         {sectors.length > 0 && <Direction zc={zMez} agentes={agentes} />}
 
-        {posicoes.map(({ agente, cor, x, z }) => (
+        {posicoes.map(({ agente, x, z }) => (
           <Agent
             key={agente.id}
             id={agente.id}
@@ -184,18 +210,12 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio }) {
             status={agente.status}
             desde={agente.desde}
             setor={agente.setor}
-            cor={cor}
             x={x}
             z={z}
             selected={agente.id === selectedId}
             onSelect={onSelect}
           />
         ))}
-
-        <EffectComposer multisampling={4}>
-          <Bloom intensity={1.6} luminanceThreshold={0.2} mipmapBlur />
-          <Vignette offset={0.3} darkness={0.7} />
-        </EffectComposer>
       </Canvas>
     </div>
   )

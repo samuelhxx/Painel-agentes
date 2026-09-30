@@ -4,9 +4,9 @@ import { hhmm } from '../time.js'
 
 // Histórico de eventos no rodapé. O mais recente entra por cima;
 // só os eventos novos (não os de exemplo) ganham o brilho de entrada.
-function EventLog({ eventos }) {
+function EventLog({ eventos, aberto }) {
   return (
-    <section className="log">
+    <section className={`log${aberto ? ' log-open' : ''}`} aria-hidden={!aberto}>
       <header className="log-head">
         <span>LOG DE EVENTOS</span>
         <span className="log-hint">ARRASTE PARA GIRAR · SCROLL PARA ZOOM · CLIQUE NUM AGENTE</span>

@@ -5,6 +5,7 @@ import { STATUS } from '../status.js'
 import { useNow, hhmm } from '../time.js'
 import { darkSteel, steel } from './materials.js'
 import { TRUSS_Y, TRUSS_H } from './Hall.jsx'
+import { MARCA } from '../marca.js'
 
 // Telão de chão de fábrica, pendurado na treliça.
 const W = 6 // largura da tela
@@ -15,7 +16,7 @@ const PX = CW / W // pixels por unidade
 const TOPO = 7.0 // altura da borda de cima do telão
 const INCLINA = 0.14 // inclinado para baixo, como telão de aeroporto
 const FONTE = "'JetBrains Mono', ui-monospace, Consolas, monospace"
-const ROXO = '#A855F7'
+const ROXO = MARCA.roxo // roxo de destaque da AS: o que acende sobre fundo escuro
 
 // y do canvas (px) → y na tela (unidades)
 const yTela = (cy) => (0.5 - cy / CH) * H
@@ -38,14 +39,14 @@ function desenharTela(g, { trabalhando, aguardando, ociosos, relogio }) {
   for (let y = 0; y < CH; y += 4) g.fillRect(0, y, CW, 1)
 
   // faixa do topo
-  g.fillStyle = 'rgba(168,85,247,0.28)'
+  g.fillStyle = 'rgba(140,44,225,0.28)'
   g.fillRect(0, 0, CW, 64)
   g.fillStyle = ROXO
   g.fillRect(0, 62, CW, 3)
   g.font = `700 26px ${FONTE}`
   g.textBaseline = 'middle'
   g.textAlign = 'left'
-  g.fillStyle = '#E9D5FF'
+  g.fillStyle = '#FFFFFF'
   g.fillText('AS CONSTRUCTION · PAINEL DE AGENTES', 24, 33)
   g.textAlign = 'right'
   g.fillStyle = '#FFFFFF'
@@ -55,7 +56,7 @@ function desenharTela(g, { trabalhando, aguardando, ociosos, relogio }) {
   const cols = [
     [trabalhando, 'TRABALHANDO', STATUS.trabalhando.color],
     [aguardando, 'AGUARDANDO', STATUS.aguardando_aprovacao.color],
-    [ociosos, 'OCIOSOS', '#4F7FC8'],
+    [ociosos, 'OCIOSOS', STATUS.ocioso.color],
   ]
   cols.forEach(([n, rotulo, cor], i) => {
     const cx = (CW / 3) * (i + 0.5)
@@ -67,13 +68,13 @@ function desenharTela(g, { trabalhando, aguardando, ociosos, relogio }) {
     g.fillStyle = '#9AA3B5'
     g.fillText(rotulo, cx, 338)
     if (i > 0) {
-      g.fillStyle = 'rgba(168,85,247,0.35)'
+      g.fillStyle = 'rgba(140,44,225,0.35)'
       g.fillRect((CW / 3) * i - 1, 100, 2, 250)
     }
   })
 
   // moldura da faixa do letreiro
-  g.fillStyle = 'rgba(168,85,247,0.35)'
+  g.fillStyle = 'rgba(140,44,225,0.35)'
   g.fillRect(0, 494, CW, 2)
 }
 

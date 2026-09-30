@@ -1,8 +1,5 @@
 // Calcula onde fica cada setor (plataforma) e cada mesa na cena.
 
-// Cores de SETOR (nunca usadas para status): roxo, ciano, magenta, verde-limão, laranja, azul.
-export const SETOR_CORES = ['#A855F7', '#00F0FF', '#FF2D95', '#39FF14', '#FF7A1A', '#3D8BFF']
-
 const DESK_X = 2.6 // distância entre mesas lado a lado
 const DESK_Z = 2.9 // distância entre fileiras de mesas
 const MAX_COLS = 3 // mesas por fileira dentro de um setor
@@ -16,10 +13,10 @@ export function computeLayout(agentes) {
     grupos.get(a.setor).push(a)
   }
 
-  const sectors = [...grupos.entries()].map(([nome, lista], i) => {
+  const sectors = [...grupos.entries()].map(([nome, lista]) => {
     const cols = Math.min(lista.length, MAX_COLS)
     const rows = Math.ceil(lista.length / MAX_COLS)
-    return { nome, lista, cols, rows, w: cols * DESK_X + 1.4, d: rows * DESK_Z + 1.2, color: SETOR_CORES[i % SETOR_CORES.length] }
+    return { nome, lista, cols, rows, w: cols * DESK_X + 1.4, d: rows * DESK_Z + 1.2 }
   })
 
   // Distribui as plataformas em fileiras e centraliza tudo na origem.
@@ -52,7 +49,6 @@ export function computeLayout(agentes) {
       const r = Math.floor(i / MAX_COLS)
       posicoes.push({
         agente: a,
-        cor: s.color,
         x: s.x + (c - (s.cols - 1) / 2) * DESK_X,
         z: s.z + (r - (s.rows - 1) / 2) * DESK_Z,
       })

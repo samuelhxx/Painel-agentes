@@ -17,7 +17,9 @@ export default function App() {
   const [pausado, setPausado] = useState(false)
   const leitura = useRef(null)
   const [selectedId, setSelectedId] = useState(null)
+  // Os dois painéis começam recolhidos: a tela abre limpa, só o galpão.
   const [gaveta, setGaveta] = useState(false)
+  const [logAberto, setLogAberto] = useState(false)
   const [aprovacoesAbertas, setAprovacoesAbertas] = useState(false)
   const aproximado = useAproximado()
 
@@ -142,8 +144,26 @@ export default function App() {
           ◱ VISÃO GERAL
         </button>
       )}
-      <button className="drawer-toggle" onClick={() => setGaveta((g) => !g)} aria-expanded={gaveta}>
-        {gaveta ? '✕' : '☰'} <span>AS CONSTRUCTION</span>
+      {/* alças de painel elétrico: esquerda abre os agentes, embaixo abre o log */}
+      <button
+        className={`alca alca-side${gaveta ? ' alca-aberta' : ''}`}
+        onClick={() => setGaveta((g) => !g)}
+        aria-expanded={gaveta}
+        title={gaveta ? 'Recolher painel de agentes' : 'Abrir painel de agentes'}
+      >
+        <span className="alca-grip" />
+        <span className="alca-txt">AGENTES</span>
+        <span className="alca-grip" />
+      </button>
+      <button
+        className={`alca alca-log${logAberto ? ' alca-aberta' : ''}`}
+        onClick={() => setLogAberto((a) => !a)}
+        aria-expanded={logAberto}
+        title={logAberto ? 'Recolher log de eventos' : 'Abrir log de eventos'}
+      >
+        <span className="alca-grip" />
+        <span className="alca-txt">EVENTOS</span>
+        <span className="alca-grip" />
       </button>
       <SidePanel
         agentes={agentes}
@@ -154,7 +174,7 @@ export default function App() {
         aberto={gaveta}
         onSelect={selecionarDaLista}
       />
-      <EventLog eventos={eventos} />
+      <EventLog eventos={eventos} aberto={logAberto} />
       {pausado && (
         <button className="retomar-btn" onClick={retomar} title="Parado depois de 30 min sem uso, para poupar a cota do Apps Script">
           ▶ RETOMAR
