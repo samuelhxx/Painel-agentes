@@ -1,4 +1,4 @@
-import { REFRESH_MS, INATIVO_MS } from './config.js'
+import { REFRESH_MS, INATIVO_MS, SHEET_CSV_URL, EVENTS_CSV_URL } from './config.js'
 import { API_URL, CHAVE_PAINEL, jsonp } from './aprovacoes.js'
 import { normalizeStatus } from './status.js'
 import { parseDate } from './time.js'
@@ -17,16 +17,10 @@ function normalizar(a) {
   }
 }
 
-// Uma leitura só traz as duas abas: agentes inteira e os últimos eventos.
 // A chave do evento é horario + agente + evento: o mesmo evento tem sempre a mesma chave,
-// não importa em qual linha ou em qual leitura ele venha.
-export async function fetchPainel() {
-  const r = await jsonp(API_URL, { chave: CHAVE_PAINEL, acao: 'ler_painel' })
-  if (!r || !Array.isArray(r.agentes) || !Array.isArray(r.eventos)) {
-    throw new Error(r && r.erro ? String(r.erro) : 'resposta inesperada')
-  }
-  const agentes = r.agentes.filter((a) => a.id).map(normalizar)
-  const eventos = r.eventos
+// não importa em qual linha, leitura ou fonte (porta ou CSV) ele venha.
+function normalizarEventos(lista) {
+  return lista
     .map((e, i) => ({
       id: `${e.horario}|${e.agente}|${e.evento}`,
       ordem: i,
@@ -37,7 +31,63 @@ export async function fetchPainel() {
       texto: e.evento,
     }))
     .filter((e) => e.t != null)
-  return { agentes, eventos }
+}
+
+// Fonte principal: a porta, ao vivo. Uma leitura traz agentes inteira e os últimos eventos.
+async function lerPorta() {
+  const r = await jsonp(API_URL, { chave: CHAVE_PAINEL, acao: 'ler_painel' })
+  if (!r || !Array.isArray(r.agentes) || !Array.isArray(r.eventos)) {
+    throw new Error(r && r.erro ? String(r.erro) : 'resposta inesperada')
+  }
+  return { agentes: r.agentes.filter((a) => a.id).map(normalizar), eventos: normalizarEventos(r.eventos) }
+}
+
+// Lê um CSV simples (aceita campos entre aspas, com vírgulas e quebras de linha dentro).
+function parseCsv(text) {
+  const rows = []
+  let row = []
+  let field = ''
+  let inQuotes = false
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (inQuotes) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++ }
+      else if (c === '"') inQuotes = false
+      else field += c
+    } else if (c === '"') inQuotes = true
+    else if (c === ',') { row.push(field); field = '' }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++
+      row.push(field); rows.push(row); row = []; field = ''
+    } else field += c
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row) }
+  const [header = [], ...data] = rows
+  const cols = header.map((h) => h.trim().toLowerCase())
+  return data.map((r) => Object.fromEntries(cols.map((c, i) => [c, (r[i] ?? '').trim()])))
+}
+
+async function fetchCsv(url) {
+  // O parâmetro extra evita que o navegador devolva uma cópia antiga (cache).
+  const res = await fetch(`${url}&_=${Date.now()}`)
+  if (!res.ok) throw new Error(`planilha respondeu ${res.status}`)
+  return parseCsv(await res.text())
+}
+
+// Reserva: a planilha publicada na web. ~1 min atrasada, mas não depende do Apps Script.
+async function lerCsv() {
+  const [ags, evs] = await Promise.all([fetchCsv(SHEET_CSV_URL), fetchCsv(EVENTS_CSV_URL)])
+  return { agentes: ags.filter((a) => a.id).map(normalizar), eventos: normalizarEventos(evs).slice(-100) }
+}
+
+// Tenta a porta; se ela não responder, lê a reserva na mesma rodada.
+// fonte diz de onde veio ('PORTA' ou 'CSV'); motivo guarda por que a porta falhou.
+export async function fetchPainel() {
+  try {
+    return { ...(await lerPorta()), fonte: 'PORTA' }
+  } catch (e) {
+    return { ...(await lerCsv()), fonte: 'CSV', motivo: e.message }
+  }
 }
 
 // Quem manda nas leituras. Cada leitura é uma execução do Apps Script, da mesma cota

@@ -738,3 +738,23 @@ body:has(.log-open) .retomar-btn { bottom: calc(var(--log-h) + 14px + env(safe-a
 /* Painel de agentes aberto: o log começa depois dele, para nenhuma linha ficar escondida. */
 body:has(.side-open) .log { left: var(--panel-w); }
 .log { transition: transform 0.28s ease-out, left 0.28s ease-out; }
+
+/* Aviso de fonte: porta lenta (usando a reserva) ou sem conexão. Discreto, no alto,
+   visível mesmo com os dois painéis recolhidos. */
+.aviso-fonte {
+  position: fixed;
+  z-index: 26;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  max-width: calc(100vw - 24px);
+  padding: 5px 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #1d1f24;
+  background: rgba(245, 180, 0, 0.92);
+  border: 1px solid #b88700;
+  pointer-events: none;
+}
+.aviso-fonte-erro { color: #ffffff; background: rgba(229, 36, 43, 0.9); border-color: #a3161b; }
+.side-warn { color: var(--amber); }

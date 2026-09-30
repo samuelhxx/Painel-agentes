@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchPainel, iniciarLeitura } from './sheet.js'
 import { MAX_EVENTOS } from './config.js'
+import { hhmmss } from './time.js'
 import { computeLayout } from './layout.js'
 import { focarEm, voltarVisaoGeral, useAproximado, estaAproximado } from './scene/focus.js'
 import Scene from './scene/Scene.jsx'
@@ -14,6 +15,7 @@ export default function App() {
   const [eventos, setEventos] = useState([])
   const [erro, setErro] = useState(null)
   const [sync, setSync] = useState(null)
+  const [fonte, setFonte] = useState('PORTA') // de onde veio a última leitura: PORTA ou CSV (reserva)
   const [pausado, setPausado] = useState(false)
   const leitura = useRef(null)
   const [selectedId, setSelectedId] = useState(null)
@@ -39,7 +41,7 @@ export default function App() {
     let ativo = true
     async function carregar() {
       try {
-        const { agentes: dados, eventos: evs } = await fetchPainel()
+        const { agentes: dados, eventos: evs, fonte: veio } = await fetchPainel()
         if (!ativo) return
         const now = Date.now()
 
@@ -75,6 +77,7 @@ export default function App() {
           )
         }
         primeiraLeitura.current = false
+        setFonte(veio)
         setErro(null)
         setSync(now)
       } catch (e) {
@@ -168,13 +171,23 @@ export default function App() {
       <SidePanel
         agentes={agentes}
         setores={layout.sectors.length}
-        fonte="PORTA"
+        fonte={fonte}
         sync={sync}
         erro={erro}
         aberto={gaveta}
         onSelect={selecionarDaLista}
       />
       <EventLog eventos={eventos} aberto={logAberto} />
+      {/* aviso discreto no alto da tela, visível mesmo com os painéis recolhidos */}
+      {(erro || fonte === 'CSV') && (
+        <div className={`aviso-fonte${erro ? ' aviso-fonte-erro' : ''}`} role="status">
+          {erro
+            ? sync
+              ? `⚠ SEM CONEXÃO · MOSTRANDO O ÚLTIMO ESTADO (${hhmmss(sync)})`
+              : '⚠ SEM CONEXÃO COM A PLANILHA · TENTANDO DE NOVO'
+            : '⚠ PORTA LENTA · USANDO A PLANILHA PUBLICADA (ATRASO ~1 MIN)'}
+        </div>
+      )}
       {pausado && (
         <button className="retomar-btn" onClick={retomar} title="Parado depois de 30 min sem uso, para poupar a cota do Apps Script">
           ▶ RETOMAR

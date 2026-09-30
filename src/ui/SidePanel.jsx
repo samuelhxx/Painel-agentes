@@ -46,7 +46,8 @@ export default function SidePanel({ agentes, setores, fonte, sync, erro, aberto,
         <p className="side-meta">
           FONTE: {fonte} · SYNC {REFRESH_MS / 1000}S · {sync ? hhmmss(sync) : '--:--:--'}
         </p>
-        {erro && <p className="side-error">⚠ PORTA SEM RESPOSTA · MOSTRANDO O ÚLTIMO ESTADO{sync ? ` (${hhmmss(sync)})` : ''}</p>}
+        {erro && <p className="side-error">⚠ SEM CONEXÃO · MOSTRANDO O ÚLTIMO ESTADO{sync ? ` (${hhmmss(sync)})` : ''}</p>}
+        {!erro && fonte === 'CSV' && <p className="side-error side-warn">⚠ PORTA LENTA · LENDO A PLANILHA PUBLICADA (~1 MIN DE ATRASO)</p>}
       </header>
 
       <div className="counters">
