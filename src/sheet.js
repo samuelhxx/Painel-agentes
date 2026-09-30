@@ -97,7 +97,7 @@ export async function fetchPainel() {
 // 2. voltou a ficar visível = pergunta uma vez na hora e retoma o intervalo;
 // 3. 30 min sem mouse nem teclado = para sozinho, até alguém chamar retomar().
 // ler() é quem guarda o último estado: se ela falhar, a tela continua com o que tinha.
-export function iniciarLeitura(ler, { aoPausar } = {}) {
+export function iniciarLeitura(ler, { aoPausar, intervalo = REFRESH_MS } = {}) {
   let timer = null
   let parado = false
   let lendo = false
@@ -111,7 +111,7 @@ export function iniciarLeitura(ler, { aoPausar } = {}) {
     try { await ler() } finally { lendo = false }
   }
   const pararTimer = () => { clearInterval(timer); timer = null }
-  const agendar = () => { pararTimer(); timer = setInterval(tick, REFRESH_MS) }
+  const agendar = () => { pararTimer(); timer = setInterval(tick, intervalo) }
 
   function pausar() {
     parado = true

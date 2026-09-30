@@ -12,6 +12,7 @@ import { overlay } from './overlay.js'
 import { foco } from './focus.js'
 import Billboard from './Billboard.jsx'
 import Direction from './Direction.jsx'
+import SalaComercial, { SALA_W, poseTelao } from './SalaComercial.jsx'
 import { STATUS, piorStatus } from '../status.js'
 import { hhmm } from '../time.js'
 
@@ -84,6 +85,10 @@ function CameraFocus() {
         if (!foco.casa) return
         alvo = foco.casa.alvo.clone()
         pos = foco.casa.pos.clone()
+      } else if (p.pos && p.alvo) {
+        // pose exata (sala comercial: de frente para o telão)
+        pos = new THREE.Vector3(...p.pos)
+        alvo = new THREE.Vector3(...p.alvo)
       } else {
         // mantém o ângulo atual de visão, só muda o ponto e a distância
         alvo = new THREE.Vector3(p.x, p.y, p.z)
@@ -125,7 +130,7 @@ function ZoomWatcher() {
   return null
 }
 
-function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio, onPronto }) {
+function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio, onPronto, salaAberta, crmResumo, crmDetalhe, onVerDetalhe }) {
   const { sectors, posicoes, width, depth, rowZ } = layout
   // Montagem em duas etapas: primeiro o que serve para trabalhar (chão, faixas, células,
   // placas, bonecos, andon); o enfeite só entra no quadro seguinte ao primeiro desenho.
@@ -143,6 +148,9 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio, onPron
   const zCorredor = depth / 2 + 4.4 // corredor principal das empilhadeiras
   const zMax = zCorredor + 2.4
   const zMeio = rowZ.length > 1 ? (rowZ[0] + rowZ[1]) / 2 : null
+  // sala comercial colada na lateral direita do galpão
+  const xSala = xMax + 0.4
+  useEffect(() => { foco.sala = poseTelao(xSala, zMin) }, [xSala, zMin])
 
   const n = useMemo(() => {
     const c = { trabalhando: 0, aguardando_aprovacao: 0, ocioso: 0, erro: 0 }
@@ -181,7 +189,7 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio, onPron
           minPolarAngle={0.25}
           maxPolarAngle={1.3}
         />
-        <CameraRig minX={xTelao - 1.5} maxX={width / 2 + 6.5} minZ={zMez - 2.5} maxZ={zCorredor} ready={sectors.length > 0} />
+        <CameraRig minX={xTelao - 1.5} maxX={xSala + SALA_W} minZ={zMez - 2.5} maxZ={zCorredor} ready={sectors.length > 0} />
         <ZoomWatcher />
         <CameraFocus />
 
@@ -204,6 +212,7 @@ function Scene({ layout, agentes, eventos, selectedId, onSelect, onVazio, onPron
         {sectors.length > 0 && etapa2 && (
           <>
             <Marca nome="etapa2" />
+            <SalaComercial x0={xSala} zMin={zMin} aberta={salaAberta} resumo={crmResumo} detalhe={crmDetalhe} onVerDetalhe={onVerDetalhe} />
             {/* tudo o que é parado no galpão vira poucas peças (ver Mesclar.jsx) */}
             <Mesclar deps={[xMin, xMax, zMin, zMax, zMeio, rowZ.join(',')]}>
               <Galpao xMin={xMin} xMax={xMax} zMin={zMin} zMax={zMax} />

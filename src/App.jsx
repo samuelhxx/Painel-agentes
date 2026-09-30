@@ -3,7 +3,9 @@ import { fetchPainel, iniciarLeitura } from './sheet.js'
 import { MAX_EVENTOS } from './config.js'
 import { hhmmss } from './time.js'
 import { computeLayout } from './layout.js'
-import { focarEm, voltarVisaoGeral, useAproximado, estaAproximado } from './scene/focus.js'
+import { focarEm, focarPose, foco, voltarVisaoGeral, useAproximado, estaAproximado } from './scene/focus.js'
+import { lerCrm, lerCrmDetalhe, resumir, ordenarDetalhe } from './crm.js'
+import TecladoPin from './ui/TecladoPin.jsx'
 import Scene from './scene/Scene.jsx'
 import SidePanel from './ui/SidePanel.jsx'
 import EventLog from './ui/EventLog.jsx'
@@ -40,6 +42,16 @@ export default function App() {
   const [logAberto, setLogAberto] = useState(false)
   const [aprovacoesAbertas, setAprovacoesAbertas] = useState(false)
   const aproximado = useAproximado()
+
+  // Sala comercial. O PIN aceito fica só neste ref e só enquanto a sala está aberta:
+  // fechou a sala, a lista e o PIN somem da memória; abrir de novo pede o PIN de novo.
+  const [salaAberta, setSalaAberta] = useState(false)
+  const [crmResumo, setCrmResumo] = useState(null)
+  const [crmDetalhe, setCrmDetalhe] = useState(null)
+  const [teclado, setTeclado] = useState(false)
+  const [pinErro, setPinErro] = useState(null)
+  const [pinConferindo, setPinConferindo] = useState(false)
+  const pinSala = useRef(null)
 
   // O cache do Google às vezes serve versões diferentes (e mais antigas) do CSV.
   // Por isso nada é substituído às cegas:
@@ -139,9 +151,66 @@ export default function App() {
   const selecionarDaLista = useCallback((id) => { selecionar(id); setGaveta(false) }, [selecionar])
 
   // Sair (Esc, X do painel, clique no vazio, botão VISÃO GERAL): fecha o detalhe e volta à visão geral.
+  const fecharSala = useCallback(() => {
+    pinSala.current = null
+    setCrmDetalhe(null)
+    setTeclado(false)
+    setPinErro(null)
+    setSalaAberta(false)
+  }, [])
+
   const sair = useCallback(() => {
     setSelectedId(null)
+    fecharSala()
     voltarVisaoGeral()
+  }, [fecharSala])
+
+  const alternarSala = useCallback(() => {
+    if (salaAberta) { fecharSala(); voltarVisaoGeral(); return }
+    setSelectedId(null)
+    setSalaAberta(true)
+    if (foco.sala) focarPose(foco.sala.pos, foco.sala.alvo)
+  }, [salaAberta, fecharSala])
+
+  // Telão: uma leitura por minuto, só com a sala aberta (e a aba visível, como o resto).
+  // Com PIN aceito, a leitura já é a do detalhe; os números saem da mesma resposta.
+  useEffect(() => {
+    if (!salaAberta) return
+    let ativo = true
+    async function lerTelao() {
+      try {
+        const pin = pinSala.current
+        const r = pin ? await lerCrmDetalhe(pin) : await lerCrm()
+        if (!ativo) return
+        setCrmResumo(resumir(r.propostas, r.hoje))
+        if (pin && pinSala.current === pin) setCrmDetalhe(ordenarDetalhe(r.propostas, r.hoje))
+      } catch (e) {
+        // PIN deixou de valer (trocado ou bloqueado): a lista some e volta a pedir PIN
+        if (ativo && (e.tipo === 'pin' || e.tipo === 'bloqueado')) { pinSala.current = null; setCrmDetalhe(null) }
+      }
+    }
+    const l = iniciarLeitura(lerTelao, { intervalo: 60000, aoPausar: (p) => { if (p && ativo) sair() } })
+    return () => { ativo = false; l.encerrar() }
+  }, [salaAberta, sair])
+
+  const enviarPin = useCallback(async (pin) => {
+    setPinConferindo(true)
+    setPinErro(null)
+    try {
+      const r = await lerCrmDetalhe(pin)
+      pinSala.current = pin
+      setCrmResumo(resumir(r.propostas, r.hoje))
+      setCrmDetalhe(ordenarDetalhe(r.propostas, r.hoje))
+      setTeclado(false)
+    } catch (e) {
+      setPinErro(
+        e.tipo === 'pin' ? 'PIN INCORRETO'
+          : e.tipo === 'bloqueado' ? 'MUITAS TENTATIVAS · TENTE MAIS TARDE'
+            : 'SEM RESPOSTA DA PORTA · TENTE DE NOVO',
+      )
+    } finally {
+      setPinConferindo(false)
+    }
   }, [])
 
   // Clique no chão/fundo vazio só "sai" se houver algo aberto ou a câmera estiver aproximada;
@@ -162,7 +231,8 @@ export default function App() {
 
   return (
     <>
-      <Scene layout={layout} agentes={agentes} eventos={eventos} selectedId={selectedId} onSelect={selecionar} onVazio={onVazio} onPronto={fimDoCarregando} />
+      <Scene layout={layout} agentes={agentes} eventos={eventos} selectedId={selectedId} onSelect={selecionar} onVazio={onVazio} onPronto={fimDoCarregando}
+        salaAberta={salaAberta} crmResumo={crmResumo} crmDetalhe={crmDetalhe} onVerDetalhe={() => { setPinErro(null); setTeclado(true) }} />
       {aproximado && (
         <button className="overview-btn" onClick={sair}>
           ◱ VISÃO GERAL
@@ -179,6 +249,19 @@ export default function App() {
         <span className="alca-txt">AGENTES</span>
         <span className="alca-grip" />
       </button>
+      <button
+        className={`alca alca-crm${salaAberta ? ' alca-aberta' : ''}`}
+        onClick={alternarSala}
+        aria-expanded={salaAberta}
+        title={salaAberta ? 'Voltar para o galpão' : 'Ir para a sala comercial'}
+      >
+        <span className="alca-grip" />
+        <span className="alca-txt">COMERCIAL</span>
+        <span className="alca-grip" />
+      </button>
+      {teclado && salaAberta && (
+        <TecladoPin onEnviar={enviarPin} onFechar={() => setTeclado(false)} verificando={pinConferindo} erro={pinErro} />
+      )}
       <button
         className={`alca alca-log${logAberto ? ' alca-aberta' : ''}`}
         onClick={() => setLogAberto((a) => !a)}

@@ -758,3 +758,79 @@ body:has(.side-open) .log { left: var(--panel-w); }
 }
 .aviso-fonte-erro { color: #ffffff; background: rgba(229, 36, 43, 0.9); border-color: #a3161b; }
 .side-warn { color: var(--amber); }
+
+/* ── Sala comercial: alça da direita, botão do telão e teclado do PIN ── */
+.alca-crm {
+  --dir: 270deg;
+  --grip: 0deg;
+  --p1: 50% 12px;
+  --p2: 50% calc(100% - 12px);
+  top: 50%;
+  right: 0;
+  width: 34px;
+  height: 200px;
+  flex-direction: column;
+  padding: 26px 0;
+  transform: translateY(-50%);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+}
+.alca-crm .alca-grip { width: 14px; height: 26px; }
+.alca-crm .alca-txt { writing-mode: vertical-rl; }
+
+.crm-ver {
+  padding: 12px 30px;
+  font-family: var(--cond);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: #ffffff;
+  background: var(--brand-dark);
+  border: 2px solid var(--brand);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.crm-ver:hover, .crm-ver:focus-visible { background: var(--brand); outline: none; }
+
+.crm-teclado {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: rgba(14, 3, 60, 0.55);
+}
+.crm-teclado-caixa {
+  width: min(340px, 90vw);
+  padding: 22px 22px 18px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  background: #14161c;
+  border: 2px solid var(--brand-dark);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.crm-teclado-titulo { margin: 0; font-family: var(--cond); font-size: 20px; font-weight: 700; letter-spacing: 0.3em; color: #ffffff; }
+.crm-teclado-pontos { display: flex; gap: 16px; padding: 6px 0; }
+.crm-teclado-pontos span { width: 18px; height: 18px; border: 2px solid var(--brand); border-radius: 50%; }
+.crm-teclado-pontos span.cheio { background: var(--brand); }
+.crm-teclado-erro span { border-color: var(--magenta); animation: apv-treme 0.35s; }
+.crm-teclado-msg { margin: 0; min-height: 1.3em; font-size: 11px; letter-spacing: 0.16em; color: var(--magenta); text-align: center; }
+.crm-teclado-grade { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.crm-tecla {
+  height: 58px;
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(180deg, #3a4048, #262a30);
+  border: 1px solid #4b5159;
+  border-radius: 6px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.crm-tecla:active { background: var(--brand-dark); }
+.crm-tecla:focus-visible { outline: 2px solid var(--brand); }
+.crm-tecla-acao { font-family: var(--cond); font-size: 15px; letter-spacing: 0.18em; }
+.crm-tecla:disabled { opacity: 0.5; }

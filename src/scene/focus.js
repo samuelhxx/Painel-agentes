@@ -34,4 +34,10 @@ export function voltarVisaoGeral() {
   setAproximado(false)
 }
 
+// Leva a câmera para uma posição e um alvo exatos (ex.: de frente para o telão da sala comercial).
+export function focarPose(pos, alvo) {
+  foco.pedido = { pos, alvo }
+  setAproximado(true)
+}
+
 export const estaAproximado = () => aproximado
